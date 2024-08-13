@@ -55,6 +55,8 @@ int main() {
 
     adc_init();
 
+    //to add buttons, use GPIO pullup, then connect pin->button->GND
+    
 
     for(auto& i: {26,27,28}) {
         adc_gpio_init(i);
@@ -70,6 +72,7 @@ int main() {
                 printf("ADC %d:\t", i);
                 for(int j=0; j < i; j++) printf("\t");
                 printf("%d\n", adcValue[i]);
+                //uart_puts(...)
             }
         }
         sleep_ms(10);
