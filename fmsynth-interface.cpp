@@ -51,12 +51,12 @@ int main() {
     gpio_set_function(1, UART_FUNCSEL_NUM(uart0, 1));
     
     uart_init(uart0, 115200);
-    uart_puts(uart0, "Hello world!");
+    // uart_puts(uart0, "Hello world!");
 
     adc_init();
 
     //to add buttons, use GPIO pullup, then connect pin->button->GND
-    
+
 
     for(auto& i: {26,27,28}) {
         adc_gpio_init(i);
