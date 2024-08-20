@@ -1,5 +1,0 @@
-/home/ck84/src/meml/pico-interface-fmsynth/build/_deps/picotool/picotool
-/home/ck84/src/meml/pico-interface-fmsynth/build/_deps/picotool/picotoolTargets.cmake
-/home/ck84/src/meml/pico-interface-fmsynth/build/_deps/picotool/picotoolTargets-release.cmake
-/home/ck84/src/meml/pico-interface-fmsynth/build/_deps/picotool/picotoolConfig.cmake
-/home/ck84/src/meml/pico-interface-fmsynth/build/_deps/picotool/picotoolConfigVersion.cmake
