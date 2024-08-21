@@ -22,7 +22,9 @@ class maxiTrigger
 {
 public:
     maxiTrigger() {};
-    /*! Generate a trigger when a signal changes beyond a certain amount \param input A signal \param tolerance The amount of chance allowed before a trigger is generated*/
+    /*! Generate a trigger when a signal changes beyond a certain amount
+    \param input A signal
+    \param tolerance The amount of chance allowed before a trigger is generated*/
     double onChanged(T input, T tolerance)
     {
         T changed = 0;
@@ -89,6 +91,64 @@ public:
     }
 };
 
+
+/**
+ * MEML Serial implementation
+ * 
+ */
+
+#include <cstring>
+#include <string>
+#include <memory>
+
+
+
+class MEMLSerial {
+
+ public:
+
+    enum msgType
+    {
+        joystick='j',
+        button='b'
+    };
+
+    const char delim = '\n';
+
+    MEMLSerial() {
+        datagram_buffer_.reserve(kDatagram_buffer_length);
+    }
+
+    void sendMessage(msgType type, uint8_t index, std::string &value) {
+        std::sprintf(datagram_buffer_.data(),
+            "%c,%d,%s%c",
+            type,
+            index,
+            value.c_str(),
+            delim);
+        printf("%s\n", value.c_str());
+        printf(datagram_buffer_.c_str());
+
+        for (char &c: datagram_buffer_) {
+            uart_putc_raw(uart0, c);
+        }
+    }
+    // Overloads for common types of messages
+    void sendMessage(msgType type, uint8_t index, uint16_t value) {
+        std::string value_str;
+        value_str.reserve(8);
+        std::sprintf(value_str.data(), "%d", value);
+        //printf("Value:%d, string: %s\n", value, value_str.c_str());
+        sendMessage(type, index, value_str);
+    }
+
+ private:
+
+    static constexpr unsigned int kDatagram_buffer_length = 128;
+    std::string datagram_buffer_;
+};
+
+
 int main() {
     stdio_init_all();
     printf("MEML FM Synth Interface\n");
@@ -99,7 +159,9 @@ int main() {
     
     uart_init(uart0, 115200);
 
-    serialSLIP serial;
+    //serialSLIP serial;
+    auto serial = std::make_unique<MEMLSerial>();
+
 
     //setup adc
     adc_init();
@@ -122,11 +184,12 @@ int main() {
             //give time for ADC to settle
             sleep_us(100);
             adcValue[i] = adc_read();
-            if (adcChangeTrigs[i].onChanged(adcValue[i], 40)) {
-                printf("ADC %d:\t", i);
-                for(int j=0; j < i; j++) printf("\t");
-                printf("%d\n", adcValue[i]);
-                serial.sendMessage(static_cast<serialSLIP::messageTypes>(serialSLIP::messageTypes::JOYSTICKX + i), adcValue[i]);
+            if (adcChangeTrigs[i].onChanged(adcValue[i], 100)) {
+                //printf("ADC %d:\t", i);
+                //for(int j=0; j < i; j++) printf("\t");
+                //printf("%d\n", adcValue[i]);
+                //serial.sendMessage(static_cast<serialSLIP::messageTypes>(serialSLIP::messageTypes::JOYSTICKX + i), adcValue[i]);
+                serial->sendMessage(MEMLSerial::joystick, i, adcValue[i] << 4);
             }
         }
         size_t idx=0;
@@ -134,8 +197,9 @@ int main() {
             bool buttonValue = gpio_get(i);
             if (buttonValue != buttonValues[idx]) {
                 buttonValues[idx] = buttonValue;
-                printf("button: %d: %d\n", i, buttonValue);
-                serial.sendMessage(static_cast<serialSLIP::messageTypes>(serialSLIP::messageTypes::TRAINMODE+idx), buttonValue);
+                //printf("button: %d: %d\n", i, buttonValue);
+                //serial.sendMessage(static_cast<serialSLIP::messageTypes>(serialSLIP::messageTypes::TRAINMODE+idx), buttonValue);
+                serial->sendMessage(MEMLSerial::button, 0, buttonValue);
             }
             idx++;
         }
