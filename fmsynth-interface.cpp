@@ -15,6 +15,7 @@ extern "C" {
 #include <cmath>
 #include <initializer_list>
 #include <vector>
+#include <array>
 
 
 template<typename T>
@@ -44,7 +45,8 @@ private:
 maxiTrigger<uint16_t> adcChangeTrigs[3];
 bool buttonValues[3]={0,0,0};
 
-uint16_t adcValue[3];
+float adcValue[3];
+float adcValue_smoothed[3];
 size_t buttonPins[3] = {13,14,15};
 
 struct serialSLIP {
@@ -115,8 +117,18 @@ class MEMLSerial {
 
     const char delim = '\n';
 
-    MEMLSerial() {
-        datagram_buffer_.reserve(kDatagram_buffer_length);
+    MEMLSerial(uart_inst_t *uart_hw = uart0) :
+        uart_hw_(uart_hw),
+        datagram_buffer_({ '\0' }) {
+        unsigned int requested_baudrate = 115200;
+
+        // Init UART internally
+        if(uart_init(uart_hw_, requested_baudrate) != requested_baudrate) {
+            printf("ERROR - Uart not initialised!\n");
+            uart_is_init_ = false;
+        }
+        uart_set_format(uart_hw_, 8, 2, UART_PARITY_NONE);
+        uart_is_init_ = true;
     }
 
     void sendMessage(msgType type, uint8_t index, std::string &value) {
@@ -126,11 +138,20 @@ class MEMLSerial {
             index,
             value.c_str(),
             delim);
-        printf("%s\n", value.c_str());
-        printf(datagram_buffer_.c_str());
+        if (uart_is_init_) {
+            //printf("%s", datagram_buffer_.data());
 
-        for (char &c: datagram_buffer_) {
-            uart_putc_raw(uart0, c);
+            //uart_puts(uart0, datagram_buffer_.data());
+            //memcpy(datagram_buffer_.data(), "ABCDE\n", sizeof(char)*7);
+            for (auto &c : datagram_buffer_) {
+                if (c == '\0') {
+                    break;
+                }
+                uart_putc_raw(uart0, c);
+                printf("%c", c);
+            }
+        } else {
+            printf("No echo - UART not init\n");
         }
     }
     // Overloads for common types of messages
@@ -145,8 +166,44 @@ class MEMLSerial {
  private:
 
     static constexpr unsigned int kDatagram_buffer_length = 128;
-    std::string datagram_buffer_;
+    uart_inst_t *uart_hw_;
+    std::array<char, kDatagram_buffer_length> datagram_buffer_;
+    bool uart_is_init_;
 };
+
+
+template<size_t n_channels>
+class OnePoleSmoother {
+ public:
+    OnePoleSmoother(float time_ms, float sample_rate) :
+        sample_rate_(sample_rate),
+        y_ { 0 } {
+        SetTimeMs(time_ms);
+    }
+    void SetTimeMs(float time_ms) {
+        //b1_ = std::exp(
+        //    std::log(0.01) /
+        //    time_ms * sample_rate_ * 0.001
+        //);
+        b1_ = std::pow(0.1, 1.f/ (time_ms * 0.001 * sample_rate_));
+    }
+    __attribute__((always_inline)) void Process(const float * x_ptr, float *y_ptr) {
+        float *y2_ptr = y_;
+        for (unsigned int c = 0; c < n_channels; c++) {
+            const float x = *x_ptr; 
+            *y2_ptr = *y_ptr = x + b1_ * (*y2_ptr - x);
+            ++x_ptr;
+            ++y_ptr;
+            ++y2_ptr;
+        }
+    }
+
+ protected:
+    float sample_rate_;
+    float b1_;
+    float y_[n_channels];
+};
+
 
 
 int main() {
@@ -154,16 +211,17 @@ int main() {
     printf("MEML FM Synth Interface\n");
 
     //serial cx
-    gpio_set_function(0, UART_FUNCSEL_NUM(uart0, 0));
-    gpio_set_function(1, UART_FUNCSEL_NUM(uart0, 1));
-    
-    uart_init(uart0, 115200);
+    const unsigned int kGPIO_UART_TX = 0;
+    const unsigned int kGPIO_UART_RX = 1;
+    gpio_set_function(kGPIO_UART_TX, UART_FUNCSEL_NUM(uart0, 0));
+    gpio_set_function(kGPIO_UART_RX, UART_FUNCSEL_NUM(uart0, 1));
 
     //serialSLIP serial;
     auto serial = std::make_unique<MEMLSerial>();
 
 
     //setup adc
+    constexpr unsigned int kN_adc = 3;
     adc_init();
     for(auto& i: {26,27,28}) {
         adc_gpio_init(i);
@@ -176,20 +234,25 @@ int main() {
         gpio_pull_up(i);
     }
 
-
+    // Set up polling and smoothing
+    constexpr int kInterval_us = 100;
+    constexpr double kInterval_s = static_cast<double>(kInterval_us*kN_adc) * 1e-6;
+    constexpr float kSample_rate = static_cast<float>(1./kInterval_s);
+    constexpr float kSmoothing_time_ms = 200;
+    auto smoother = std::make_unique< OnePoleSmoother<kN_adc> >(kSmoothing_time_ms, kSample_rate);
 
     while (1) {
         for(auto& i: {0,1,2}) {
             adc_select_input(i);
             //give time for ADC to settle
-            sleep_us(100);
-            adcValue[i] = adc_read();
-            if (adcChangeTrigs[i].onChanged(adcValue[i], 100)) {
-                //printf("ADC %d:\t", i);
-                //for(int j=0; j < i; j++) printf("\t");
-                //printf("%d\n", adcValue[i]);
-                //serial.sendMessage(static_cast<serialSLIP::messageTypes>(serialSLIP::messageTypes::JOYSTICKX + i), adcValue[i]);
-                serial->sendMessage(MEMLSerial::joystick, i, adcValue[i] << 4);
+            sleep_us(kInterval_us);
+            adcValue[i] = static_cast<float>(adc_read());
+        }
+        smoother->Process(adcValue, adcValue_smoothed);
+        for (auto& i: {0,1,2}) {
+            if (adcChangeTrigs[i].onChanged(adcValue[i], 50)) {
+                int16_t smoothed_adc_value = static_cast<int16_t>(adcValue_smoothed[i]);
+                serial->sendMessage(MEMLSerial::joystick, i, smoothed_adc_value << 4);
             }
         }
         size_t idx=0;
@@ -199,7 +262,8 @@ int main() {
                 buttonValues[idx] = buttonValue;
                 //printf("button: %d: %d\n", i, buttonValue);
                 //serial.sendMessage(static_cast<serialSLIP::messageTypes>(serialSLIP::messageTypes::TRAINMODE+idx), buttonValue);
-                serial->sendMessage(MEMLSerial::button, 0, buttonValue);
+                // TODO AM Button indexes should be reversed properly
+                serial->sendMessage(MEMLSerial::button, 2-idx, buttonValue);
             }
             idx++;
         }

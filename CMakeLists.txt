@@ -1,4 +1,5 @@
 cmake_minimum_required(VERSION 3.28)
+
 include(pico_sdk_import.cmake)
 project(pico_interface_fmsynth C CXX ASM)
 set(CMAKE_C_STANDARD 11)
