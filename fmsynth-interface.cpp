@@ -238,7 +238,7 @@ int main() {
     constexpr int kInterval_us = 100;
     constexpr double kInterval_s = static_cast<double>(kInterval_us*kN_adc) * 1e-6;
     constexpr float kSample_rate = static_cast<float>(1./kInterval_s);
-    constexpr float kSmoothing_time_ms = 200;
+    constexpr float kSmoothing_time_ms = 10;
     auto smoother = std::make_unique< OnePoleSmoother<kN_adc> >(kSmoothing_time_ms, kSample_rate);
 
     while (1) {
@@ -250,8 +250,8 @@ int main() {
         }
         smoother->Process(adcValue, adcValue_smoothed);
         for (auto& i: {0,1,2}) {
-            if (adcChangeTrigs[i].onChanged(adcValue[i], 50)) {
-                int16_t smoothed_adc_value = static_cast<int16_t>(adcValue_smoothed[i]);
+            int16_t smoothed_adc_value = static_cast<int16_t>(adcValue_smoothed[i]);
+            if (adcChangeTrigs[i].onChanged(smoothed_adc_value, 20)) {
                 serial->sendMessage(MEMLSerial::joystick, i, smoothed_adc_value << 4);
             }
         }
