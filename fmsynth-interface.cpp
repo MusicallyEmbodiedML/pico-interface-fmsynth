@@ -15,7 +15,7 @@ extern "C" {
 #include <cmath>
 #include <initializer_list>
 #include <vector>
-#include <array>
+#include "MedianFilter.h"
 
 
 template<typename T>
@@ -48,6 +48,10 @@ bool buttonValues[3]={0,0,0};
 float adcValue[3];
 float adcValue_smoothed[3];
 size_t buttonPins[3] = {13,14,15};
+
+MedianFilter<float> adcFilters[3];
+MedianFilter<int> buttonFilters[3];
+// MedianFilter<int> momentaryFilters[3];
 
 struct serialSLIP {
 public:
@@ -220,6 +224,13 @@ int main() {
     auto serial = std::make_unique<MEMLSerial>();
 
 
+    for (auto &v: adcFilters) {
+        v.init(25);
+    }
+    for (auto &v: buttonFilters) {
+        v.init(20);
+    }
+
     //setup adc
     constexpr unsigned int kN_adc = 3;
     adc_init();
@@ -242,22 +253,24 @@ int main() {
     auto smoother = std::make_unique< OnePoleSmoother<kN_adc> >(kSmoothing_time_ms, kSample_rate);
 
     while (1) {
+        //read the ADCs
         for(auto& i: {0,1,2}) {
             adc_select_input(i);
             //give time for ADC to settle
             sleep_us(kInterval_us);
             adcValue[i] = static_cast<float>(adc_read());
         }
-        smoother->Process(adcValue, adcValue_smoothed);
+        // smoother->Process(adcValue, adcValue_smoothed);
         for (auto& i: {0,1,2}) {
-            int16_t smoothed_adc_value = static_cast<int16_t>(adcValue_smoothed[i]);
+            // int16_t smoothed_adc_value = static_cast<int16_t>(adcValue_smoothed[i]);
+            int16_t smoothed_adc_value = static_cast<int16_t>(adcFilters[i].process(adcValue[i]));
             if (adcChangeTrigs[i].onChanged(smoothed_adc_value, 20)) {
                 serial->sendMessage(MEMLSerial::joystick, i, smoothed_adc_value << 4);
             }
         }
         size_t idx=0;
         for(auto& i: buttonPins) {
-            bool buttonValue = gpio_get(i);
+            bool buttonValue = buttonFilters[idx].process(gpio_get(i));
             if (buttonValue != buttonValues[idx]) {
                 buttonValues[idx] = buttonValue;
                 //printf("button: %d: %d\n", i, buttonValue);
