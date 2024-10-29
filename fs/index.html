@@ -1,0 +1,26 @@
+
+<html>
+  <head>
+    <script src="./NexusUI.js"></script>
+  </head>
+  <body>
+
+    <div id="dial"></div>
+    <div id="dial2"></div>
+    <div id="seq"></div>
+
+    <script>
+      var dial = new Nexus.Dial('#dial')
+      var dial = new Nexus.Dial('#dial2')
+      var sequencer = new Nexus.Sequencer('#seq',{
+        'size': [400,200],
+        'mode': 'toggle',
+        'rows': 5,
+        'columns': 10,
+        'paddingRow': 10,
+        'paddingColumn': 20
+        })
+    </script>
+
+  </body>
+</html>

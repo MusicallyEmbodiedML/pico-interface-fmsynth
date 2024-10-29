@@ -17,6 +17,54 @@ extern "C" {
 #include <vector>
 #include "MedianFilter.h"
 
+#include "lwip/apps/httpd.h"
+#include "pico/stdlib.h"
+#include "pico/cyw43_arch.h"
+
+#include "lwipopts.h"
+#include "cgi.h"
+#include "ssi.h"
+
+#include "pico/multicore.h"
+
+void run_server() {
+    httpd_init();
+    ssi_init();
+    cgi_init();
+    // printf("Http server initialized.\n");
+    // infinite loop for now
+    for (;;) {}
+}
+
+void core1_entry() {
+
+    if (cyw43_arch_init()) {
+        // printf("failed to initialise\n");
+        // return 1;
+    }
+    cyw43_arch_enable_sta_mode();
+    // this seems to be the best be can do using the predefined `cyw43_pm_value` macro:
+    // cyw43_wifi_pm(&cyw43_state, CYW43_PERFORMANCE_PM);
+    // however it doesn't use the `CYW43_NO_POWERSAVE_MODE` value, so we do this instead:
+    cyw43_wifi_pm(&cyw43_state, cyw43_pm_value(CYW43_NO_POWERSAVE_MODE, 20, 1, 1, 1));
+
+    // printf("Connecting to WiFi...\n");
+    if (cyw43_arch_wifi_connect_timeout_ms("MrsWildebeast", "znbiupb45cz9e4f", CYW43_AUTH_WPA2_AES_PSK, 30000)) {
+        // printf("failed to connect.\n");
+        // return 1;
+    } else {
+        // printf("Connected.\n");
+
+        extern cyw43_t cyw43_state;
+        auto ip_addr = cyw43_state.netif[CYW43_ITF_STA].ip_addr.addr;
+        // printf("IP Address: %lu.%lu.%lu.%lu\n", ip_addr & 0xFF, (ip_addr >> 8) & 0xFF, (ip_addr >> 16) & 0xFF, ip_addr >> 24);
+    }
+    // turn on LED to signal connected
+    cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, 1);
+
+
+    run_server();
+}
 
 template<typename T>
 class maxiTrigger
@@ -47,15 +95,19 @@ bool buttonValues[3]={0,0,0};
 
 float adcValue[3];
 float adcValue_smoothed[3];
-size_t buttonPins[3] = {13,14,15};
+const int NBUTTONS = 3;
+// size_t buttonPins[NBUTTONS] = {13,14,15,3,4,5};
+size_t buttonPins[NBUTTONS] = {13,14,15};
 
 MedianFilter<float> adcFilters[3];
-MedianFilter<int> buttonFilters[3];
+MedianFilter<int> buttonFilters[NBUTTONS];
+MedianFilter<int> clockFilter;
+
 // MedianFilter<int> momentaryFilters[3];
 
 struct serialSLIP {
 public:
-    enum messageTypes {JOYSTICKX=0, JOYSTICKY, JOYSTICKZ, TRAINMODE, RANDOMISE, RECORD};
+    enum messageTypes {JOYSTICKX=0, JOYSTICKY, JOYSTICKZ, TRAINMODE, RANDOMISE, RECORD, PULSE_PERIOD};
 
     //SLIP encoding
     static const uint8_t eot = 0300;
@@ -116,7 +168,8 @@ class MEMLSerial {
     enum msgType
     {
         joystick='j',
-        button='b'
+        button='b',
+        pulse_period='p'
     };
 
     const char delim = '\n';
@@ -159,7 +212,7 @@ class MEMLSerial {
         }
     }
     // Overloads for common types of messages
-    void sendMessage(msgType type, uint8_t index, uint16_t value) {
+    void sendMessage(msgType type, uint8_t index, uint64_t value) {
         std::string value_str;
         value_str.reserve(8);
         std::sprintf(value_str.data(), "%d", value);
@@ -208,11 +261,30 @@ class OnePoleSmoother {
     float y_[n_channels];
 };
 
+static int pulseCount=0;
+static uint64_t lastPulse=0;
+auto serial = std::make_unique<MEMLSerial>();
 
+
+void gpio_callback(uint gpio, uint32_t events) {
+    absolute_time_t t0;
+    t0 = get_absolute_time();
+    // int64_t now = to_us_since_boot(t0);
+    uint64_t diff = absolute_time_diff_us(lastPulse, t0);
+    // printf("pulse %d, %lld\n", pulseCount++, diff);
+    lastPulse = t0;
+    diff = clockFilter.process(diff);
+    
+    serial->sendMessage(MEMLSerial::msgType::pulse_period, 0, diff);
+}
 
 int main() {
     stdio_init_all();
     printf("MEML FM Synth Interface\n");
+
+    gpio_set_irq_enabled_with_callback(2, GPIO_IRQ_EDGE_RISE , true, &gpio_callback);
+    
+    multicore_launch_core1(core1_entry);
 
     //serial cx
     const unsigned int kGPIO_UART_TX = 0;
@@ -221,16 +293,15 @@ int main() {
     gpio_set_function(kGPIO_UART_RX, UART_FUNCSEL_NUM(uart0, 1));
 
     //serialSLIP serial;
-    auto serial = std::make_unique<MEMLSerial>();
 
 
     for (auto &v: adcFilters) {
         v.init(25);
     }
     for (auto &v: buttonFilters) {
-        v.init(20);
+        v.init(10);
     }
-
+    clockFilter.init(7);
     //setup adc
     constexpr unsigned int kN_adc = 3;
     adc_init();
@@ -276,7 +347,7 @@ int main() {
                 //printf("button: %d: %d\n", i, buttonValue);
                 //serial.sendMessage(static_cast<serialSLIP::messageTypes>(serialSLIP::messageTypes::TRAINMODE+idx), buttonValue);
                 // TODO AM Button indexes should be reversed properly
-                serial->sendMessage(MEMLSerial::button, 2-idx, buttonValue);
+                serial->sendMessage(MEMLSerial::button, NBUTTONS-1-idx, buttonValue);
             }
             idx++;
         }
