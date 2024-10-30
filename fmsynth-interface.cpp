@@ -10,6 +10,7 @@ extern "C" {
 #include "hardware/gpio.h"
 #include "hardware/adc.h"
 #include "hardware/uart.h"
+#include "hardware/irq.h"
 }
 
 #include <cmath>
@@ -118,15 +119,15 @@ public:
     void sendDatagram(uint8_t bytes[3]) {
         uart_putc_raw(uart0, eot);
         for(int i=0; i < 3; i++) {
-            if(bytes[i] == eot){ 
+            if(bytes[i] == eot){
                 uart_putc_raw(uart0, slipesc);
-                uart_putc_raw(uart0, slipescend); 
-            } else if(bytes[i]==slipesc) {  
+                uart_putc_raw(uart0, slipescend);
+            } else if(bytes[i]==slipesc) {
                 uart_putc_raw(uart0, slipesc);
-                uart_putc_raw(uart0, slipescesc); 
+                uart_putc_raw(uart0, slipescesc);
             } else {
                 uart_putc_raw(uart0, bytes[i]);
-            }	
+            }
         }
         uart_putc_raw(uart0, eot);
     }
@@ -152,13 +153,29 @@ public:
 
 /**
  * MEML Serial implementation
- * 
+ *
  */
 
 #include <cstring>
 #include <string>
 #include <memory>
+#include <sstream>
+#include <iostream>
 
+
+void uart0_irq_routine(void) {
+
+    std::stringstream message;
+
+    while(uart_is_readable(uart0)) {
+        uint8_t ch = uart_getc(uart0);
+        message << ch;
+    }
+
+    std::cout << "UART IRQ: message - ";
+    std::cout << message.str();
+    std::cout << std::endl;
+}
 
 
 class MEMLSerial {
@@ -185,6 +202,11 @@ class MEMLSerial {
             uart_is_init_ = false;
         }
         uart_set_format(uart_hw_, 8, 2, UART_PARITY_NONE);
+
+        irq_set_exclusive_handler(UART0_IRQ, uart0_irq_routine);
+        irq_set_enabled(UART0_IRQ, true);
+        uart_set_irq_enables(uart0, true, false);
+
         uart_is_init_ = true;
     }
 
@@ -247,7 +269,7 @@ class OnePoleSmoother {
     __attribute__((always_inline)) void Process(const float * x_ptr, float *y_ptr) {
         float *y2_ptr = y_;
         for (unsigned int c = 0; c < n_channels; c++) {
-            const float x = *x_ptr; 
+            const float x = *x_ptr;
             *y2_ptr = *y_ptr = x + b1_ * (*y2_ptr - x);
             ++x_ptr;
             ++y_ptr;
@@ -274,7 +296,7 @@ void gpio_callback(uint gpio, uint32_t events) {
     // printf("pulse %d, %lld\n", pulseCount++, diff);
     lastPulse = t0;
     diff = clockFilter.process(diff);
-    
+
     serial->sendMessage(MEMLSerial::msgType::pulse_period, 0, diff);
 }
 
@@ -283,7 +305,7 @@ int main() {
     printf("MEML FM Synth Interface\n");
 
     gpio_set_irq_enabled_with_callback(2, GPIO_IRQ_EDGE_RISE , true, &gpio_callback);
-    
+
     multicore_launch_core1(core1_entry);
 
     //serial cx
