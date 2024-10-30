@@ -1,7 +1,7 @@
 
 <html>
   <head>
-    <script src="./NexusUI.js"></script>
+    <script src="./NexusUI.min.js"></script>
   </head>
   <body>
 
@@ -10,7 +10,28 @@
     <div id="seq"></div>
 
     <script>
+      const work_queue = [];
+
+      function queue(message) {
+        work_queue.push(message)  
+      }
+
+
+      function run() {
+        const work = work_queue.shift();
+        if (work !== undefined) {
+          fetch("/dials.cgi?v=" + work);
+        }
+      }
+
+      setInterval(run, 25);
+
       var dial = new Nexus.Dial('#dial')
+      dial.on('change',function(v) {
+        if (work_queue.length == 0) {
+          work_queue.push(v);
+        }
+      });
       var dial = new Nexus.Dial('#dial2')
       var sequencer = new Nexus.Sequencer('#seq',{
         'size': [400,200],
@@ -21,6 +42,7 @@
         'paddingColumn': 20
         })
     </script>
+
 
   </body>
 </html>
