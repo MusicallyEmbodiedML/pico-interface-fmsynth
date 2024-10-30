@@ -34,7 +34,9 @@ void run_server() {
     cgi_init();
     // printf("Http server initialized.\n");
     // infinite loop for now
-    for (;;) {}
+    for (;;) {
+        tight_loop_contents();
+    }
 }
 
 void core1_entry() {
@@ -49,16 +51,16 @@ void core1_entry() {
     // however it doesn't use the `CYW43_NO_POWERSAVE_MODE` value, so we do this instead:
     cyw43_wifi_pm(&cyw43_state, cyw43_pm_value(CYW43_NO_POWERSAVE_MODE, 20, 1, 1, 1));
 
-    // printf("Connecting to WiFi...\n");
+    printf("Connecting to WiFi...\n");
     if (cyw43_arch_wifi_connect_timeout_ms("MrsWildebeast", "znbiupb45cz9e4f", CYW43_AUTH_WPA2_AES_PSK, 30000)) {
         // printf("failed to connect.\n");
         // return 1;
     } else {
-        // printf("Connected.\n");
+        printf("Connected.\n");
 
         extern cyw43_t cyw43_state;
         auto ip_addr = cyw43_state.netif[CYW43_ITF_STA].ip_addr.addr;
-        // printf("IP Address: %lu.%lu.%lu.%lu\n", ip_addr & 0xFF, (ip_addr >> 8) & 0xFF, (ip_addr >> 16) & 0xFF, ip_addr >> 24);
+        printf("IP Address: %lu.%lu.%lu.%lu\n", ip_addr & 0xFF, (ip_addr >> 8) & 0xFF, (ip_addr >> 16) & 0xFF, ip_addr >> 24);
     }
     // turn on LED to signal connected
     cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, 1);
