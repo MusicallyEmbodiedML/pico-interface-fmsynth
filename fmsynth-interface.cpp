@@ -93,16 +93,17 @@ private:
     bool firstTrigger = 1;
 };
 
-maxiTrigger<uint16_t> adcChangeTrigs[3];
-bool buttonValues[3]={0,0,0};
-
-float adcValue[3];
-float adcValue_smoothed[3];
 const int NBUTTONS = 4;
 // size_t buttonPins[NBUTTONS] = {13,14,15,3,4,5};
 size_t buttonPins[NBUTTONS] = {13,14,15,16};
+bool buttonValues[4]={0,0,0,0};
 
-MedianFilter<float> adcFilters[3];
+const int NADCS = 3;
+maxiTrigger<uint16_t> adcChangeTrigs[NADCS];
+float adcValue[NADCS];
+float adcValue_smoothed[NADCS];
+
+MedianFilter<float> adcFilters[NADCS];
 MedianFilter<int> buttonFilters[NBUTTONS];
 MedianFilter<int> clockFilter;
 
