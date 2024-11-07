@@ -98,9 +98,9 @@ bool buttonValues[3]={0,0,0};
 
 float adcValue[3];
 float adcValue_smoothed[3];
-const int NBUTTONS = 3;
+const int NBUTTONS = 4;
 // size_t buttonPins[NBUTTONS] = {13,14,15,3,4,5};
-size_t buttonPins[NBUTTONS] = {13,14,15};
+size_t buttonPins[NBUTTONS] = {13,14,15,16};
 
 MedianFilter<float> adcFilters[3];
 MedianFilter<int> buttonFilters[NBUTTONS];
@@ -371,7 +371,8 @@ int main() {
                 //printf("button: %d: %d\n", i, buttonValue);
                 //serial.sendMessage(static_cast<serialSLIP::messageTypes>(serialSLIP::messageTypes::TRAINMODE+idx), buttonValue);
                 // TODO AM Button indexes should be reversed properly
-                serial->sendMessage(MEMLSerial::button, NBUTTONS-1-idx, buttonValue);
+                static const std::vector<size_t> button_idx_translate{2, 1, 0, 3};
+                serial->sendMessage(MEMLSerial::button, button_idx_translate[idx], buttonValue);
             }
             idx++;
         }
