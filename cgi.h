@@ -17,6 +17,8 @@ const char * cgi_handler_extended(int iIndex, int iNumParams, char *pcParam[], c
 
 const char * cgi_handler_dial(int iIndex, int iNumParams, char *pcParam[], char *pcValue[]);
 
+const char * cgi_handler_button(int iIndex, int iNumParams, char *pcParam[], char *pcValue[]);
+
 
 /* led control and debugging info */
 void Led_On(int led);

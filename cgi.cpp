@@ -172,7 +172,7 @@ cgi_handler_button(int iIndex, int iNumParams, char *pcParam[], char *pcValue[])
 void
 cgi_init(void)
 {
-    http_set_cgi_handlers(cgi_handlers, 3);
+    http_set_cgi_handlers(cgi_handlers, 4);
 
     for(int i = LED1; i <= LED4; i++){
         gpio_init(i);
