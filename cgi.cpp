@@ -16,7 +16,11 @@ static const tCGI cgi_handlers[] = {
 ,
     {
         "/dials.cgi", cgi_handler_dial
-    }};
+    },
+    {
+        "/buttons.cgi", cgi_handler_button
+    },
+    };
 
 
 
@@ -108,6 +112,36 @@ cgi_handler_dial(int iIndex, int iNumParams, char *pcParam[], char *pcValue[])
     int i=0;
 
     printf("cgi_handler_dial called with index %d\n", iIndex);
+
+    // for (i = 0; i < iNumParams; i++){
+    //     /* check if parameter is "led" */
+    //     if (strcmp(pcParam[i] , "led") == 0){
+    //         /* look ar argument to find which led to turn on */
+    //         if(strcmp(pcValue[i], "1") == 0)
+    //             Led_On(LED1);
+    //         else if(strcmp(pcValue[i], "2") == 0)
+    //             Led_On(LED2);
+    //         else if(strcmp(pcValue[i], "3") == 0)
+    //             Led_On(LED3);
+    //         else if(strcmp(pcValue[i], "4") == 0)
+    //             Led_On(LED4);
+    //     }
+    // }
+
+    for (i = 0; i < iNumParams; i++){
+        if (strcmp(pcParam[i] , "v") == 0){
+            printf("v: %s", pcValue[i]);
+        }
+    }
+    /* Our response to the "SUBMIT" is to simply send the same page again*/
+    return "/blank.html";
+}
+const char *
+cgi_handler_button(int iIndex, int iNumParams, char *pcParam[], char *pcValue[])
+{
+    int i=0;
+
+    printf("cgi_handler_button called with index %d\n", iIndex);
 
     // for (i = 0; i < iNumParams; i++){
     //     /* check if parameter is "led" */
