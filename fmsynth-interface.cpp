@@ -96,7 +96,7 @@ private:
 const int NBUTTONS = 4;
 // size_t buttonPins[NBUTTONS] = {13,14,15,3,4,5};
 size_t buttonPins[NBUTTONS] = {13,14,15,16};
-bool buttonValues[4]={0,0,0,0};
+bool buttonValues[NBUTTONS]={0,0,0,0};
 
 const int NADCS = 3;
 maxiTrigger<uint16_t> adcChangeTrigs[NADCS];
