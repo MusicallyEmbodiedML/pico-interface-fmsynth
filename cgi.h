@@ -7,8 +7,13 @@
 #define LED3	20
 #define LED4	21
 
+
+#include <memory>
+#include "MEMLSerial_Pico.hpp"
+
+
 /* initialize the CGI handler */
-void  cgi_init(void);
+void  cgi_init(std::shared_ptr<MEMLSerial> serial);
 
 /* CGI handler for LED control */
 const char * cgi_handler_basic(int iIndex, int iNumParams, char *pcParam[], char *pcValue[]);

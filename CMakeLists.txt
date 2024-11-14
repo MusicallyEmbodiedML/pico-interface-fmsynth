@@ -47,9 +47,10 @@ set(CMAKE_CXX_FLAGS_RELEASE "-Ofast")
 pico_sdk_init()
 
 add_executable(pico_interface_fmsynth
-        fmsynth-interface.cpp
+        main.cpp
         cgi.cpp
         ssi.cpp
+        MEMLSerial_Pico.cpp
         )
 
 

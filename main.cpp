@@ -29,10 +29,14 @@ extern "C" {
 
 #include "pico/multicore.h"
 
+// Global serial singleton
+auto serial = std::make_shared<MEMLSerial>();
+
+
 void run_server() {
     httpd_init();
     ssi_init();
-    cgi_init();
+    cgi_init(serial);
     // printf("Http server initialized.\n");
     // infinite loop for now
     for (;;) {
@@ -88,7 +92,6 @@ MedianFilter<int> clockFilter;
 
 static int pulseCount=0;
 static uint64_t lastPulse=0;
-auto serial = std::make_unique<MEMLSerial>();
 
 
 void gpio_callback(uint gpio, uint32_t events) {

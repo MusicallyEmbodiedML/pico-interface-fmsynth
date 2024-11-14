@@ -4,6 +4,9 @@
 #include "cgi.h"
 
 
+static std::shared_ptr<MEMLSerial> serial_;
+
+
 static const tCGI cgi_handlers[] = {
     {
         /* Html request for "/leds.cgi" will start cgi_handler_basic */
@@ -129,9 +132,10 @@ cgi_handler_dial(int iIndex, int iNumParams, char *pcParam[], char *pcValue[])
     // }
 
     for (i = 0; i < iNumParams; i++){
-        if (strcmp(pcParam[i] , "v") == 0){
-            printf("v: %s", pcValue[i]);
-        }
+        // if (strcmp(pcParam[i] , "v") == 0){
+        //     printf("v: %s", pcValue[i]);
+        // }
+        printf("%s: %s", pcParam[i], pcValue[i]);
     }
     /* Our response to the "SUBMIT" is to simply send the same page again*/
     return "/blank.html";
@@ -159,9 +163,10 @@ cgi_handler_button(int iIndex, int iNumParams, char *pcParam[], char *pcValue[])
     // }
 
     for (i = 0; i < iNumParams; i++){
-        if (strcmp(pcParam[i] , "v") == 0){
-            printf("v: %s", pcValue[i]);
-        }
+        // if (strcmp(pcParam[i] , "v") == 0){
+        //     printf("v: %s", pcValue[i]);
+        // }
+        printf("%s: %s", pcParam[i], pcValue[i]);
     }
     /* Our response to the "SUBMIT" is to simply send the same page again*/
     return "/blank.html";
@@ -170,8 +175,10 @@ cgi_handler_button(int iIndex, int iNumParams, char *pcParam[], char *pcValue[])
 
 /* initialize the CGI handler */
 void
-cgi_init(void)
+cgi_init(std::shared_ptr<MEMLSerial> serial)
 {
+    serial_ = serial;
+
     http_set_cgi_handlers(cgi_handlers, 4);
 
     for(int i = LED1; i <= LED4; i++){
