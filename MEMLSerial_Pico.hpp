@@ -31,6 +31,7 @@ class MEMLSerial {
 
     void sendMessage(msgType type, uint8_t index, std::string &value);
     void sendMessage(msgType type, uint8_t index, uint64_t value);
+    void sendFloatMessage(msgType type, uint8_t index, float value);
 
  private:
 

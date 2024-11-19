@@ -68,3 +68,12 @@ void MEMLSerial::sendMessage(msgType type, uint8_t index, uint64_t value) {
     //printf("Value:%d, string: %s\n", value, value_str.c_str());
     sendMessage(type, index, value_str);
 }
+
+void MEMLSerial::sendFloatMessage(msgType type, uint8_t index, float value)
+{
+    std::string value_str;
+    value_str.reserve(32);
+    std::sprintf(value_str.data(), "%.9g", value);
+    //printf("Value:%f, string: %s\n", value, value_str.c_str());
+    sendMessage(type, index, value_str);
+}

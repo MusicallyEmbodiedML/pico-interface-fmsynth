@@ -131,12 +131,23 @@ cgi_handler_dial(int iIndex, int iNumParams, char *pcParam[], char *pcValue[])
     //     }
     // }
 
+    int slider_idx;
+    float slider_value;
+
     for (i = 0; i < iNumParams; i++){
         // if (strcmp(pcParam[i] , "v") == 0){
         //     printf("v: %s", pcValue[i]);
         // }
-        printf("%s: %s", pcParam[i], pcValue[i]);
+        //printf("%s: %s", pcParam[i], pcValue[i]);
+        // Process index parameter
+        if (!strcmp(pcParam[i], "s")) {
+            slider_idx = atoi(pcValue[i]);
+        } else if (!strcmp(pcParam[i], "v")) {
+            slider_value = atof(pcValue[i]);
+        }
     }
+    //printf("Slider %d: %f\n", slider_idx, slider_value);
+    serial_->sendFloatMessage(MEMLSerial::msgType::slider, slider_idx, slider_value);
     /* Our response to the "SUBMIT" is to simply send the same page again*/
     return "/blank.html";
 }
