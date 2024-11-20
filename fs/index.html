@@ -58,21 +58,28 @@
       console.log(grid);
       grid.listen();
 
-      const work_queue = [];
+      const slider_queue = [];
 
       function queue(message) {
-        work_queue.push(message)  
+        slider_queue.push(message)  
       }
 
 
       function run() {
-        const work = work_queue.shift();
-        if (work !== undefined) {
-          fetch("/dials.cgi?v=" + work);
+        if (slider_queue.length > 0) {
+          // Take the last element
+          const work = slider_queue[slider_queue.length - 1];
+          if (work !== undefined) {
+            const idx = work[0];
+            const val = work[1];
+            fetch("/dials.cgi?s=" + idx + "&v=" + val);
+          }
+          // Clear array
+          slider_queue.length = 0;
         }
       }
 
-      setInterval(run, 25);
+      setInterval(run, 1/10);
 
       var datasetRadios = new Nexus.RadioButton('#datasetSelector',{
         'size': [150,35],
@@ -96,7 +103,7 @@
       slider1.on('change',function(v) {
         // v is the value of the button
         console.log(v);
-        fetch("/dials.cgi?s=0&v=" + v);
+        slider_queue.push([0, v]);
       })
       var slider2 = new Nexus.Slider('#slider2',{
           'size': [150,50],
@@ -105,7 +112,7 @@
           'max': 1,
           'step': 0,
           'value': 0
-      })        
+      })
       var slider3 = new Nexus.Slider('#slider3',{
           'size': [150,50],
           'mode': 'relative',  // 'relative' or 'absolute'
@@ -113,7 +120,7 @@
           'max': 1,
           'step': 0,
           'value': 0
-      })        
+      })
       var slider4 = new Nexus.Slider('#slider4',{
           'size': [150,50],
           'mode': 'relative',  // 'relative' or 'absolute'
