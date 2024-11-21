@@ -46,6 +46,10 @@
         <div id="button4"></div>
       </div>
     </div>
+    <div id="debug">
+      Debug:
+      <span id="debugstr">replaceme</span>
+    </div>
     
 
     <script>
@@ -79,7 +83,7 @@
         }
       }
 
-      setInterval(run, 1/10);
+      setInterval(run, 100);
 
       var datasetRadios = new Nexus.RadioButton('#datasetSelector',{
         'size': [150,35],
@@ -191,6 +195,20 @@
       //   'paddingRow': 10,
       //   'paddingColumn': 20
       //   })
+
+      async function getJSON() {
+        const response = await fetch("/ssi.shtml");
+        if (!response.ok) {
+            console.log("poll error")
+          }
+          // Parse the response as JSON
+          const data = await response.json();
+          console.log(data);    
+          document.getElementById('debugstr').innerText = data.test;  
+
+      }
+      setInterval(getJSON, 500);
+
     </script>
 
 

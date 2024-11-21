@@ -4,6 +4,7 @@
 #include "lwipopts.h"
 #include "ssi.h"
 #include "cgi.h"
+#include <sstream>
 
 
 // max length of the tags defaults to be 8 chars
@@ -19,7 +20,8 @@ const char * __not_in_flash("httpd") ssi_example_tags[] = {
     "bg1",      // 7
     "bg2",      // 8
     "bg3",      // 9
-    "bg4"       // 10
+    "bg4",       // 10
+    "JSONDATA", //11
 };
 
 u16_t __time_critical_func(ssi_handler)(int iIndex, char *pcInsert, int iInsertLen)
@@ -85,6 +87,15 @@ u16_t __time_critical_func(ssi_handler)(int iIndex, char *pcInsert, int iInsertL
                 printed = snprintf(pcInsert, iInsertLen, "\"background-color:red;\"");
         }
           break;
+        case 11:
+        {
+            static int count=0;
+            std::stringstream ss;
+            ss  << "{\"test\":" << count << "}";
+            printed=snprintf(pcInsert, iInsertLen, ss.str().c_str());    
+            count++;
+        }
+        break;
         default: /* unknown tag */
             printed = 0;
             break;

@@ -58,6 +58,7 @@ void core1_entry() {
 
     printf("Connecting to WiFi...\n");
     if (cyw43_arch_wifi_connect_timeout_ms("This Hotspot Is Hotter Than You", "nemoreno", CYW43_AUTH_WPA2_AES_PSK, 30000)) {
+    // if (cyw43_arch_wifi_connect_timeout_ms("MrsWildebeast", "znbiupb45cz9e4f", CYW43_AUTH_WPA2_AES_PSK, 30000)) {
         printf("Failed to connect.\n");
         return;
     } else {

@@ -6,8 +6,9 @@
 
 static std::shared_ptr<MEMLSerial> serial_;
 
+#define NUMCGIHANDLERS 5
 
-static const tCGI cgi_handlers[] = {
+static const tCGI cgi_handlers[NUMCGIHANDLERS] = {
     {
         /* Html request for "/leds.cgi" will start cgi_handler_basic */
         "/leds.cgi", cgi_handler_basic
@@ -23,7 +24,10 @@ static const tCGI cgi_handlers[] = {
     {
         "/buttons.cgi", cgi_handler_button
     },
-    };
+    {
+        "/poll.cgi", cgi_handler_poll
+    },
+};
 
 
 
@@ -151,6 +155,7 @@ cgi_handler_dial(int iIndex, int iNumParams, char *pcParam[], char *pcValue[])
     /* Our response to the "SUBMIT" is to simply send the same page again*/
     return "/blank.html";
 }
+
 const char *
 cgi_handler_button(int iIndex, int iNumParams, char *pcParam[], char *pcValue[])
 {
@@ -184,19 +189,31 @@ cgi_handler_button(int iIndex, int iNumParams, char *pcParam[], char *pcValue[])
 }
 
 
+const char *
+cgi_handler_poll(int iIndex, int iNumParams, char *pcParam[], char *pcValue[])
+{
+    int i=0;
+
+    printf("cgi_handler_poll called with index %d\n", iIndex);
+
+    /* Our response to the "SUBMIT" is to simply send the same page again*/
+    return "{\"test\":19}";
+}
+
+
 /* initialize the CGI handler */
 void
 cgi_init(std::shared_ptr<MEMLSerial> serial)
 {
     serial_ = serial;
 
-    http_set_cgi_handlers(cgi_handlers, 4);
+    http_set_cgi_handlers(cgi_handlers, NUMCGIHANDLERS);
 
-    for(int i = LED1; i <= LED4; i++){
-        gpio_init(i);
-        gpio_set_dir(i, GPIO_OUT);
-        gpio_put(i, 0);
-    }
+    // for(int i = LED1; i <= LED4; i++){
+    //     gpio_init(i);
+    //     gpio_set_dir(i, GPIO_OUT);
+    //     gpio_put(i, 0);
+    // }
 }
 
 /* led control and debugging info */
@@ -213,5 +230,7 @@ Led_Off(int led)
     printf("GPIO%d off\n", led);
     gpio_put(led, 0);
 }
+
+
 
 

@@ -71,7 +71,7 @@ void MEMLSerial::sendMessage(msgType type, uint8_t index, std::string &value) {
                 break;
             }
             uart_putc_raw(uart0, c);
-            printf("%c", c);
+            // printf("%c", c);
         }
     } else {
         printf("No echo - UART not init\n");
