@@ -33,8 +33,10 @@
         Models
         <div id="modelSelector"></div>
       </div>
-      <div id="item3">   
+      <div id="item3">
+        <p>Expl range:</p>
         <div id="slider1"></div>
+        <p>N. iterations:</p>
         <div id="slider2"></div>
         <div id="slider3"></div>
         <div id="slider4"></div>
@@ -47,8 +49,8 @@
       </div>
     </div>
     <div id="debug">
-      Debug:
-      <span id="debugstr">replaceme</span>
+      Last error:
+      <span id="debugstr"><i>Loading...</i></span>
     </div>
     
 
@@ -96,27 +98,46 @@
         'active': 0
       })
 
+      /**
+       * SLIDERS
+       */
+
       var slider1 = new Nexus.Slider('#slider1',{
           'size': [150,50],
-          'mode': 'relative',  // 'relative' or 'absolute'
+          'mode': 'absolute',  // 'relative' or 'absolute'
           'min': 0,
           'max': 1,
           'step': 0,
           'value': 0
       })
+      var slider1_uichange = true;
       slider1.on('change',function(v) {
-        // v is the value of the button
-        console.log(v);
-        slider_queue.push([0, v]);
-      })
+        if (slider1_uichange === true) {
+          // v is the value of the button
+          console.log(v);
+          slider_queue.push([0, v]);
+        }
+        slider1_uichange = true;
+      });
+
       var slider2 = new Nexus.Slider('#slider2',{
           'size': [150,50],
-          'mode': 'relative',  // 'relative' or 'absolute'
+          'mode': 'absolute',  // 'relative' or 'absolute'
           'min': 0,
-          'max': 1,
-          'step': 0,
+          'max': 2000,
+          'step': 1,
           'value': 0
       })
+      var slider2_uichange = true;
+      slider2.on('change',function(v) {
+        if (slider2_uichange === true) {
+          // v is the value of the button
+          console.log(v);
+          slider_queue.push([1, v]);
+        }
+        slider2_uichange = true;
+      });
+  
       var slider3 = new Nexus.Slider('#slider3',{
           'size': [150,50],
           'mode': 'relative',  // 'relative' or 'absolute'
@@ -203,11 +224,17 @@
           }
           // Parse the response as JSON
           const data = await response.json();
-          console.log(data);    
-          document.getElementById('debugstr').innerText = data.test;  
-
+          //console.log(data);
+          // Last error
+          document.getElementById('debugstr').innerText = data.last_error;
+          // Expl range
+          slider1_uichange = false;
+          slider1.value = data.exploration_range;
+          // N iterations
+          slider2_uichange = false;
+          slider2.value = data.n_iterations;
       }
-      setInterval(getJSON, 500);
+      setInterval(getJSON, 100);
 
     </script>
 

@@ -1,6 +1,9 @@
 #include "MEMLSerial_Pico.hpp"
 #include "UART_Common.hpp"
 #include "common_defs.h"
+#include "pico/stdlib.h"
+
+#include <iostream>
 
 
 ts_app_state GAppState;// Global serial singleton
@@ -11,7 +14,6 @@ static void uart0_irq_routine(void) {
 
     while(uart_is_readable(uart0)) {
         char ch = uart_getc(uart0);
-        printf("%c", ch);
         serial->StoreMessage(ch);
     }
 }
@@ -40,21 +42,48 @@ MEMLSerial::MEMLSerial(uart_inst_t *uart_hw) :
 void MEMLSerial::StoreMessage(char c)
 {
     if (c == '\n') {
-        _ProcessMessage(rx_buffer_.str());
-        rx_buffer_.str(std::string());
-    } else {
-        rx_buffer_ << c;
+        // Process buffer
+        _ProcessMessage(rx_buffer_);
+        // ...and clear
+        rx_buffer_ = std::string();
+    } else if (c) {
+        rx_buffer_.push_back(c);
+        //printf("%c", c);
     }
 }
 
 
-void MEMLSerial::_ProcessMessage(std::string msg)
+void MEMLSerial::_ProcessMessage(const std::string &msg)
 {
-    std::printf("UART RX- %s\n", msg);
+    // printf("UART RX- size %d, content: ", msg.size());
+    // for (auto &c: msg) {
+    //     printf("%c", c);
+    // }
+
+    std::vector<std::string> tokens = UART_Common::SplitMessage(msg);
+    char msgtype = tokens[0][0];
+
+    std::vector<std::string> msg_payload(tokens.begin()+1, tokens.end());
+
+    switch(msgtype) {
+
+        case UART_Common::state_dump: {
+            if (UART_Common::ExtractAppState(msg_payload, GAppState)) {
+                printf("UART- App state received.\n");
+            } else {
+                printf("UART- App state corrupted!.\n");
+                // TODO Query for another app state
+            }
+        } break;
+
+        default: {
+            std::cout << "UART- Message type '" << msgtype << "' not implemented." << std::endl;
+        }
+    }
 }
 
 
-void MEMLSerial::sendMessage(msgType type, uint8_t index, std::string &value) {
+void MEMLSerial::sendMessage(UART_Common::msgType type, uint8_t index, std::string &value) {
     std::sprintf(datagram_buffer_.data(),
         "%c,%d,%s%c",
         type,
@@ -71,7 +100,7 @@ void MEMLSerial::sendMessage(msgType type, uint8_t index, std::string &value) {
                 break;
             }
             uart_putc_raw(uart0, c);
-            // printf("%c", c);
+            printf("%c", c);
         }
     } else {
         printf("No echo - UART not init\n");
@@ -80,7 +109,7 @@ void MEMLSerial::sendMessage(msgType type, uint8_t index, std::string &value) {
 
 
 // Overloads for common types of messages
-void MEMLSerial::sendMessage(msgType type, uint8_t index, uint64_t value) {
+void MEMLSerial::sendMessage(UART_Common::msgType type, uint8_t index, uint64_t value) {
     std::string value_str;
     value_str.reserve(8);
     std::sprintf(value_str.data(), "%d", value);
@@ -88,7 +117,7 @@ void MEMLSerial::sendMessage(msgType type, uint8_t index, uint64_t value) {
     sendMessage(type, index, value_str);
 }
 
-void MEMLSerial::sendFloatMessage(msgType type, uint8_t index, float value)
+void MEMLSerial::sendFloatMessage(UART_Common::msgType type, uint8_t index, float value)
 {
     std::string value_str;
     value_str.reserve(32);

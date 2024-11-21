@@ -18,6 +18,7 @@ extern "C" {
 #include "MedianFilter.h"
 #include "MEMLSerial_Pico.hpp"
 #include "MaxiTrigger.hpp"
+#include "UART_Common.hpp"
 
 #include "lwip/apps/httpd.h"
 #include "pico/stdlib.h"
@@ -104,7 +105,12 @@ void gpio_callback(uint gpio, uint32_t events) {
     lastPulse = t0;
     diff = clockFilter.process(diff);
 
-    serial->sendMessage(MEMLSerial::msgType::pulse_period, 0, diff);
+    serial->sendMessage(UART_Common::msgType::pulse_period, 0, diff);
+}
+
+long long int init_request_state(long int id, void *data) {
+    serial->sendMessage(UART_Common::state_request, 0, 0);
+    return 0;
 }
 
 int main() {
@@ -121,7 +127,8 @@ int main() {
     gpio_set_function(kGPIO_UART_TX, UART_FUNCSEL_NUM(uart0, 0));
     gpio_set_function(kGPIO_UART_RX, UART_FUNCSEL_NUM(uart0, 1));
 
-    //serialSLIP serial;
+    // Defer sending message to fetch XMOS state
+    add_alarm_in_ms(2000, &init_request_state, nullptr, false);
 
 
     for (auto &v: adcFilters) {
@@ -162,7 +169,7 @@ int main() {
         for (auto& i: {0,1,2}) {
             int16_t smoothed_adc_value = static_cast<int16_t>(adcFilters[i].process(adcValue[i]));
             if (adcChangeTrigs[i].onChanged(smoothed_adc_value, 20)) {
-                serial->sendMessage(MEMLSerial::joystick, i, smoothed_adc_value << 4);
+                serial->sendMessage(UART_Common::joystick, i, smoothed_adc_value << 4);
             }
         }
         size_t idx=0;
@@ -174,7 +181,7 @@ int main() {
                 //serial.sendMessage(static_cast<serialSLIP::messageTypes>(serialSLIP::messageTypes::TRAINMODE+idx), buttonValue);
                 // TODO AM Button indexes should be reversed properly
                 static const std::vector<size_t> button_idx_translate{2, 1, 0, 3};
-                serial->sendMessage(MEMLSerial::button, button_idx_translate[idx], buttonValue);
+                serial->sendMessage(UART_Common::button, button_idx_translate[idx], buttonValue);
             }
             idx++;
         }

@@ -3,6 +3,9 @@
 #include "lwipopts.h"
 #include "cgi.h"
 
+#include "UART_Common.hpp"
+#include "common_defs.h"
+
 
 static std::shared_ptr<MEMLSerial> serial_;
 
@@ -151,7 +154,16 @@ cgi_handler_dial(int iIndex, int iNumParams, char *pcParam[], char *pcValue[])
         }
     }
     //printf("Slider %d: %f\n", slider_idx, slider_value);
-    serial_->sendFloatMessage(MEMLSerial::msgType::slider, slider_idx, slider_value);
+    serial_->sendFloatMessage(UART_Common::slider, slider_idx, slider_value);
+    // Update internal state
+    switch (slider_idx) {
+        case 0: {  // expl range
+            GAppState.exploration_range = slider_value;
+        } break;
+        case 1: {  // n iterations
+            GAppState.n_iterations = slider_value;
+        } break;
+    }
     /* Our response to the "SUBMIT" is to simply send the same page again*/
     return "/blank.html";
 }
