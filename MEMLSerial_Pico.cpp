@@ -1,18 +1,19 @@
 #include "MEMLSerial_Pico.hpp"
+#include "UART_Common.hpp"
+#include "common_defs.h"
+
+
+ts_app_state GAppState;// Global serial singleton
+extern std::shared_ptr<MEMLSerial> serial;
 
 
 static void uart0_irq_routine(void) {
 
-    std::stringstream message;
-
     while(uart_is_readable(uart0)) {
-        uint8_t ch = uart_getc(uart0);
-        message << ch;
+        char ch = uart_getc(uart0);
+        printf("%c", ch);
+        serial->StoreMessage(ch);
     }
-
-    std::cout << "UART IRQ: message - ";
-    std::cout << message.str();
-    std::cout << std::endl;
 }
 
 
@@ -34,6 +35,24 @@ MEMLSerial::MEMLSerial(uart_inst_t *uart_hw) :
 
     uart_is_init_ = true;
 }
+
+
+void MEMLSerial::StoreMessage(char c)
+{
+    if (c == '\n') {
+        _ProcessMessage(rx_buffer_.str());
+        rx_buffer_.str(std::string());
+    } else {
+        rx_buffer_ << c;
+    }
+}
+
+
+void MEMLSerial::_ProcessMessage(std::string msg)
+{
+    std::printf("UART RX- %s\n", msg);
+}
+
 
 void MEMLSerial::sendMessage(msgType type, uint8_t index, std::string &value) {
     std::sprintf(datagram_buffer_.data(),

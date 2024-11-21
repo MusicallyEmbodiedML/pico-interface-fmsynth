@@ -59,7 +59,9 @@ pico_enable_stdio_usb(pico_interface_fmsynth 1)
 pico_enable_stdio_uart(pico_interface_fmsynth 0)
 pico_add_extra_outputs(pico_interface_fmsynth)
 pico_add_extra_outputs(pico_interface_fmsynth)
-target_include_directories(pico_interface_fmsynth PRIVATE ${CMAKE_SOURCE_DIR})
+target_include_directories(pico_interface_fmsynth PRIVATE
+        ${CMAKE_SOURCE_DIR}
+        lib_common/lib_common/api)
 target_link_libraries(pico_interface_fmsynth pico_stdlib hardware_adc pico_multicore 
         pico_cyw43_arch_lwip_threadsafe_background
         pico_lwip_http)

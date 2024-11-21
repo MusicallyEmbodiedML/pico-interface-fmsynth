@@ -32,12 +32,16 @@ class MEMLSerial {
     void sendMessage(msgType type, uint8_t index, std::string &value);
     void sendMessage(msgType type, uint8_t index, uint64_t value);
     void sendFloatMessage(msgType type, uint8_t index, float value);
+    void StoreMessage(char c);
 
  private:
+
+    void _ProcessMessage(std::string msg);
 
     static constexpr unsigned int kDatagram_buffer_length = 128;
     uart_inst_t *uart_hw_;
     std::array<char, kDatagram_buffer_length> datagram_buffer_;
+    std::stringstream rx_buffer_;
     bool uart_is_init_;
 };
 

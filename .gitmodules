@@ -1,0 +1,3 @@
+[submodule "lib_common"]
+	path = lib_common
+	url = git@github.com:MusicallyEmbodiedML/lib_common.git
