@@ -2,7 +2,7 @@
 <!DOCTYPE html>
 <html>
   <head>
-    
+
     <script src="./NexusUI.min.js"></script>
     <script src="./magic_grid.min.js"></script>
 
@@ -16,45 +16,55 @@
         align-items: center;
         border-radius: 8px;
       }
-      .container .item1 { height: 200px; }
-      .container .item2 { height: 200px; }
-      .container .item3 { height: 600px; }
-      .container .item4 { height: 400px; }
-    </style>    
+      .ctrlpanel { width: 150px; margin:10px; border-color: rgb(222, 219, 231); border-width: 1px; border-style:solid; padding: 10px;}
+      #loss {background-color: green; padding: 4px;}
+    </style>
+
   </head>
   <body>
 
     <div id="container">
-      <div id="item1">
-        Datasets
-        <div id="datasetSelector"></div>
+      <div id="modelCtrl" class="ctrlpanel">
+        <div>
+          Models
+          <div id="modelSelector"></div>
+        </div>
+        <div>
+          <div id="resetModelButton"></div>
+        </div>
       </div>
-      <div id="item2">
-        Models
-        <div id="modelSelector"></div>
+      <div id="dataCtrl" class="ctrlpanel">
+        <div>
+          Datasets
+          <div id="datasetSelector"></div>
+        </div>
+        <div>
+          <div id="clearDataButton"></div>
+        </div>
       </div>
-      <div id="item3">
-        <p>Expl range:</p>
-        <div id="slider1"></div>
-        <p>N. iterations:</p>
-        <div id="slider2"></div>
-        <div id="slider3"></div>
-        <div id="slider4"></div>
+      <div id="trainCtrl" class="ctrlpanel">
+        Training
+        <div id="trainButton"></div>
+        Iterations <div id="numIterations"></div>
+        <div id="iterationsSlider"></div>
+        <div>Loss: <span id="loss">Loading...</span></div>
       </div>
-      <div id="item4">   
-        <div id="button1"></div>
-        <div id="button2"></div>
-        <div id="button3"></div>
-        <div id="button4"></div>
+      <div id="explorationCtrl" class="ctrlpanel">
+        Exploration
+        Range: <div id="rangeSlider"></div>
+        Mode:
+        <div id="exploModeSelect"></div>
+
       </div>
     </div>
-    <div id="debug">
-      Last error:
-      <span id="debugstr"><i>Loading...</i></span>
-    </div>
-    
+
 
     <script>
+
+      const idx_of = {
+        "randomSpeed": 0,
+        "nIterations": 1
+      };
 
       let grid = new MagicGrid({container: "#container", // Required. Can be a class, id, or an HTMLElement.
         static: true, // Required for static content.
@@ -64,12 +74,7 @@
       console.log(grid);
       grid.listen();
 
-      const slider_queue = [];
-
-      function queue(message) {
-        slider_queue.push(message)  
-      }
-
+      var slider_queue = [];
 
       function run() {
         if (slider_queue.length > 0) {
@@ -92,73 +97,86 @@
         'numberOfButtons': 4,
         'active': 0
       })
+
       var modelRadios = new Nexus.RadioButton('#modelSelector',{
         'size': [150,35],
         'numberOfButtons': 4,
         'active': 0
       })
 
-      /**
-       * SLIDERS
-       */
-
-      var slider1 = new Nexus.Slider('#slider1',{
-          'size': [150,50],
-          'mode': 'absolute',  // 'relative' or 'absolute'
-          'min': 0,
-          'max': 1,
-          'step': 0,
-          'value': 0
+      var btnResetModel = new Nexus.TextButton('#resetModelButton',{
+        'size': [120,40],
+        'mode': 'button',
+        'state': false,
+        'text': "Reset"
       })
-      var slider1_uichange = true;
-      slider1.on('change',function(v) {
-        if (slider1_uichange === true) {
-          // v is the value of the button
-          console.log(v);
-          slider_queue.push([0, v]);
-        }
-        slider1_uichange = true;
-      });
+      var btnClearData = new Nexus.TextButton('#clearDataButton',{
+        'size': [120,40],
+        'mode': 'button',
+        'state': false,
+        'text': "Clear"
+      })
+      var btnTrain = new Nexus.TextButton('#trainButton',{
+        'size': [120,40],
+        'mode': 'button',
+        'state': false,
+        'text': "Train"
+      })
 
-      var slider2 = new Nexus.Slider('#slider2',{
-          'size': [150,50],
+      var numboxIterations = new Nexus.Number('#numIterations',{
+        'size': [60,30],
+        'value': 0,
+        'min': 1,
+        'max': 300,
+        'step': 1
+      })
+
+      var sliderIterations = new Nexus.Slider('#iterationsSlider',{
+          'size': [150,30],
           'mode': 'absolute',  // 'relative' or 'absolute'
-          'min': 0,
-          'max': 2000,
+          'min': 1,
+          'max': 1000,
           'step': 1,
           'value': 0
       })
-      var slider2_uichange = true;
-      slider2.on('change',function(v) {
-        if (slider2_uichange === true) {
+
+      numboxIterations.link(sliderIterations);
+
+      var sliderIterations_uichange = true;
+      sliderIterations.on('change',function(v) {
+        if (sliderIterations_uichange === true) {
           // v is the value of the button
           console.log(v);
-          slider_queue.push([1, v]);
+          slider_queue.push([idx_of["nIterations"], v]);
         }
-        slider2_uichange = true;
+        sliderIterations_uichange = true;
+      })
+
+      var sliderRange = new Nexus.Slider('#rangeSlider',{
+          'size': [150,30],
+          'mode': 'absolute',  // 'relative' or 'absolute'
+          'min': 0,
+          'max': 1,
+          'step': 0,
+          'value': 0.5
+      })
+
+      var sliderRange_uichange = true;
+      sliderRange.on('change',function(v) {
+        if (sliderRange_uichange === true) {
+          // v is the value of the button
+          console.log(v);
+          slider_queue.push([idx_of["randomSpeed"], v]);
+        }
+        sliderRange_uichange = true;
       });
-  
-      var slider3 = new Nexus.Slider('#slider3',{
-          'size': [150,50],
-          'mode': 'relative',  // 'relative' or 'absolute'
-          'min': 0,
-          'max': 1,
-          'step': 0,
-          'value': 0
-      })
-      var slider4 = new Nexus.Slider('#slider4',{
-          'size': [150,50],
-          'mode': 'relative',  // 'relative' or 'absolute'
-          'min': 0,
-          'max': 1,
-          'step': 0,
-          'value': 0
+
+      var exploModeSelect = new Nexus.Select('#exploModeSelect',{
+        'size': [100,30],
+        'options': ['nn weight','pretrain', 'zoom']
       })
 
-      /**
-       * BUTTONS
-       */
-
+      /*
       var button1 = new Nexus.Button('#button1',{
         'size': [75,75],
         'mode': 'aftertouch',
@@ -200,6 +218,7 @@
         console.log(v.state);
         fetch("/buttons.cgi?b=3&v=" + (v.state ? 1 : 0));
       })
+      */
 
       // var dial = new Nexus.Dial('#dial')
       // dial.on('change',function(v) {
@@ -226,13 +245,13 @@
           const data = await response.json();
           //console.log(data);
           // Last error
-          document.getElementById('debugstr').innerText = data.last_error;
+          document.getElementById('loss').innerText = data.last_error;
           // Expl range
-          slider1_uichange = false;
-          slider1.value = data.exploration_range;
+          sliderRange_uichange = false;
+          sliderRange.value = data.exploration_range;
           // N iterations
-          slider2_uichange = false;
-          slider2.value = data.n_iterations;
+          sliderIterations_uichange = false;
+          sliderIterations.value = data.n_iterations;
       }
       setInterval(getJSON, 100);
 
