@@ -16,34 +16,45 @@
         align-items: center;
         border-radius: 8px;
       }
-      .container .item1 { height: 200px; }
-      .container .item2 { height: 200px; }
-      .container .item3 { height: 600px; }
-      .container .item4 { height: 400px; }
-    </style>    
+      .ctrlpanel { width: 150px; margin:10px; border-color: rgb(222, 219, 231); border-width: 1px; border-style:solid; padding: 10px;}
+      #loss {background-color: green; padding: 4px;}
+    </style>   
+
   </head>
   <body>
 
     <div id="container">
-      <div id="item1">
-        Datasets
-        <div id="datasetSelector"></div>
+      <div id="modelCtrl" class="ctrlpanel">
+        <div>
+          Models
+          <div id="modelSelector"></div>
+        </div>
+        <div>
+          <div id="resetModelButton"></div>
+        </div>
       </div>
-      <div id="item2">
-        Models
-        <div id="modelSelector"></div>
+      <div id="dataCtrl" class="ctrlpanel">
+        <div>
+          Datasets
+          <div id="datasetSelector"></div>
+        </div>
+        <div>
+          <div id="clearDataButton"></div>
+        </div>
       </div>
-      <div id="item3">   
-        <div id="slider1"></div>
-        <div id="slider2"></div>
-        <div id="slider3"></div>
-        <div id="slider4"></div>
+      <div id="trainCtrl" class="ctrlpanel">  
+        Training 
+        <div id="trainButton"></div>        
+        Iterations <div id="numIterations"></div>
+        <div id="iterationsSlider"></div>
+        <div>Loss: <span id="loss">0.1234</span></div>
       </div>
-      <div id="item4">   
-        <div id="button1"></div>
-        <div id="button2"></div>
-        <div id="button3"></div>
-        <div id="button4"></div>
+      <div id="explorationCtrl" class="ctrlpanel">   
+        Exploration
+        Range: <div id="rangeSlider"></div>
+        Mode:
+        <div id="exploModeSelect"></div>
+        
       </div>
     </div>
     <div id="debug">
@@ -90,50 +101,77 @@
         'numberOfButtons': 4,
         'active': 0
       })
+
+      
       var modelRadios = new Nexus.RadioButton('#modelSelector',{
         'size': [150,35],
         'numberOfButtons': 4,
         'active': 0
       })
 
-      var slider1 = new Nexus.Slider('#slider1',{
-          'size': [150,50],
+      var btnResetModel = new Nexus.TextButton('#resetModelButton',{
+        'size': [120,40],
+        'mode': 'button',
+        'state': false,
+        'text': "Reset"
+      })
+      var btnClearData = new Nexus.TextButton('#clearDataButton',{
+        'size': [120,40],
+        'mode': 'button',
+        'state': false,
+        'text': "Clear"
+      })
+      var btnTrain = new Nexus.TextButton('#trainButton',{
+        'size': [120,40],
+        'mode': 'button',
+        'state': false,
+        'text': "Train"
+      })
+      
+      var numboxIterations = new Nexus.Number('#numIterations',{
+        'size': [60,30],
+        'value': 0,
+        'min': 1,
+        'max': 300,
+        'step': 1
+      })
+      
+
+
+      var sliderIterations = new Nexus.Slider('#iterationsSlider',{
+          'size': [150,30],
           'mode': 'relative',  // 'relative' or 'absolute'
-          'min': 0,
-          'max': 1,
-          'step': 0,
+          'min': 1,
+          'max': 300,
+          'step': 1,
           'value': 0
       })
-      slider1.on('change',function(v) {
+
+      numboxIterations.link(sliderIterations);
+
+
+
+      sliderIterations.on('change',function(v) {
         // v is the value of the button
         console.log(v);
         slider_queue.push([0, v]);
       })
-      var slider2 = new Nexus.Slider('#slider2',{
-          'size': [150,50],
+
+      var sliderRange = new Nexus.Slider('#rangeSlider',{
+          'size': [150,30],
           'mode': 'relative',  // 'relative' or 'absolute'
           'min': 0,
           'max': 1,
           'step': 0,
-          'value': 0
-      })
-      var slider3 = new Nexus.Slider('#slider3',{
-          'size': [150,50],
-          'mode': 'relative',  // 'relative' or 'absolute'
-          'min': 0,
-          'max': 1,
-          'step': 0,
-          'value': 0
-      })
-      var slider4 = new Nexus.Slider('#slider4',{
-          'size': [150,50],
-          'mode': 'relative',  // 'relative' or 'absolute'
-          'min': 0,
-          'max': 1,
-          'step': 0,
-          'value': 0
+          'value': 0.5
       })
 
+
+      
+      var exploModeSelect = new Nexus.Select('#exploModeSelect',{
+        'size': [100,30],
+        'options': ['nn weight','pretrain', 'zoom']
+      })
       /**
        * BUTTONS
        */
