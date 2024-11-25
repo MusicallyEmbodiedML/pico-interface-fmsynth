@@ -190,11 +190,34 @@ cgi_handler_button(int iIndex, int iNumParams, char *pcParam[], char *pcValue[])
     //     }
     // }
 
+    int button_idx;
+    int button_value;
+
     for (i = 0; i < iNumParams; i++){
         // if (strcmp(pcParam[i] , "v") == 0){
         //     printf("v: %s", pcValue[i]);
         // }
-        printf("%s: %s", pcParam[i], pcValue[i]);
+        //printf("%s: %s", pcParam[i], pcValue[i]);
+        // Process index parameter
+        if (!strcmp(pcParam[i], "b")) {
+            button_idx = atoi(pcValue[i]);
+        } else if (!strcmp(pcParam[i], "v")) {
+            button_value = atoi(pcValue[i]);
+        }
+    }
+    //printf("Slider %d: %f\n", slider_idx, slider_value);
+    serial_->sendMessage(UART_Common::button, button_idx, button_value);
+    // Update internal state
+    switch (button_idx) {
+        case 6: {  // explmode
+            GAppState.current_expl_mode = static_cast<te_expl_mode>(button_value);
+        } break;
+        case 7: {  // dataset
+            GAppState.current_dataset = button_value;
+        } break;
+        case 8: {  // model
+            GAppState.current_model = button_value;
+        } break;
     }
     /* Our response to the "SUBMIT" is to simply send the same page again*/
     return "/blank.html";

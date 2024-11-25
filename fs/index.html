@@ -63,7 +63,16 @@
 
       const idx_of = {
         "randomSpeed": 0,
-        "nIterations": 1
+        "nIterations": 1,
+        "training": 0,
+        "randomise": 1,
+        "savedata": 2,
+        "reset": 3,
+        "discretise": 4,
+        "complex": 5,
+        "explmode": 6,
+        "dataset": 7,
+        "model": 8
       };
 
       let grid = new MagicGrid({container: "#container", // Required. Can be a class, id, or an HTMLElement.
@@ -97,12 +106,20 @@
         'numberOfButtons': 4,
         'active': 0
       })
+      datasetRadios.on('change', function(v) {
+        console.log(v);
+        fetch("/buttons.cgi?b=" + idx_of["dataset"] + "&v=" + v);
+      });
 
       var modelRadios = new Nexus.RadioButton('#modelSelector',{
         'size': [150,35],
         'numberOfButtons': 4,
         'active': 0
       })
+      modelRadios.on('change', function(v) {
+        console.log(v);
+        fetch("/buttons.cgi?b=" + idx_of["model"] + "&v=" + v);
+      });
 
       var btnResetModel = new Nexus.TextButton('#resetModelButton',{
         'size': [120,40],
@@ -175,66 +192,10 @@
         'size': [100,30],
         'options': ['nn weight','pretrain', 'zoom']
       })
-
-      /*
-      var button1 = new Nexus.Button('#button1',{
-        'size': [75,75],
-        'mode': 'aftertouch',
-        'state': false
+      exploModeSelect.on('change',function(v) {
+        console.log(v);
+        fetch("/buttons.cgi?b=" + idx_of["explmode"] + "&v=" + v.index);
       })
-      button1.on('change',function(v) {
-        // v is the value of the button
-        console.log(v.state);
-        fetch("/buttons.cgi?b=0&v=" + (v.state ? 1 : 0));
-      })
-      var button2 = new Nexus.Button('#button2',{
-        'size': [75,75],
-        'mode': 'aftertouch',
-        'state': false
-      })
-      button2.on('change',function(v) {
-        // v is the value of the button
-        console.log(v.state);
-        fetch("/buttons.cgi?b=1&v=" + (v.state ? 1 : 0));
-      })
-
-      var button3 = new Nexus.Button('#button3',{
-        'size': [75,75],
-        'mode': 'aftertouch',
-        'state': false
-      })
-      button3.on('change',function(v) {
-        // v is the value of the button
-        console.log(v.state);
-        fetch("/buttons.cgi?b=2&v=" + (v.state ? 1 : 0));
-      })
-      var button4 = new Nexus.Button('#button4',{
-        'size': [75,75],
-        'mode': 'aftertouch',
-        'state': false
-      })
-      button4.on('change',function(v) {
-        // v is the value of the button
-        console.log(v.state);
-        fetch("/buttons.cgi?b=3&v=" + (v.state ? 1 : 0));
-      })
-      */
-
-      // var dial = new Nexus.Dial('#dial')
-      // dial.on('change',function(v) {
-      //   if (work_queue.length == 0) {
-      //     work_queue.push(v);
-      //   }
-      // });
-      // var dial = new Nexus.Dial('#dial2')
-      // var sequencer = new Nexus.Sequencer('#seq',{
-      //   'size': [400,200],
-      //   'mode': 'toggle',
-      //   'rows': 5,
-      //   'columns': 10,
-      //   'paddingRow': 10,
-      //   'paddingColumn': 20
-      //   })
 
       async function getJSON() {
         const response = await fetch("/ssi.shtml");
