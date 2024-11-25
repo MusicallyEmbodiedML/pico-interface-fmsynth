@@ -79,17 +79,21 @@ void MEMLSerial::_ProcessMessage(const std::string &msg)
         case UART_Common::ui_info: {
 
             if (msg_payload.size() < 2) {
-                std::cout << "UART- Message type '" << "' malformed." << std::endl;
-            }
-
-            te_ui_info ui_info_idx = static_cast<te_ui_info>(std::stoi(msg_payload[1]));
-            switch(ui_info_idx) {
-                case ui_last_error: {
-                    float last_error = std::stof(msg_payload[2]);
-                    GAppState.last_error = last_error;
-                } break;
-                default: {
-                    std::cout << "UART- Unrecognised ui index " << ui_info_idx << std::endl;
+                std::cout << "UART- Message type '" << static_cast<char>(msgtype)
+                    << "' malformed, size: " << msg_payload.size()
+                    << std::endl;
+            } else {
+                te_ui_info ui_info_idx = static_cast<te_ui_info>(std::stoi(msg_payload[0]));
+                std::cout << "UART- UI element '" << ui_info_idx << "' updated" << std::endl;
+                switch(ui_info_idx) {
+                    case ui_last_error: {
+                        float last_error = std::stof(msg_payload[1]);
+                        GAppState.last_error = last_error;
+                        std::cout << "UART- updated error to " << last_error << std::endl;
+                    } break;
+                    default: {
+                        std::cout << "UART- Unrecognised ui index " << ui_info_idx << std::endl;
+                    }
                 }
             }
 
