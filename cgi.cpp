@@ -209,14 +209,17 @@ cgi_handler_button(int iIndex, int iNumParams, char *pcParam[], char *pcValue[])
     serial_->sendMessage(UART_Common::button, button_idx, button_value);
     // Update internal state
     switch (button_idx) {
-        case 6: {  // explmode
+        case toggle_explmode: {
             GAppState.current_expl_mode = static_cast<te_expl_mode>(button_value);
         } break;
-        case 7: {  // dataset
+        case toggle_dataset: {
             GAppState.current_dataset = button_value;
         } break;
-        case 8: {  // model
+        case toggle_model: {
             GAppState.current_model = button_value;
+        } break;
+        case toggle_training: {
+            GAppState.current_nn_mode = static_cast<te_nn_mode>(button_value);
         } break;
     }
     /* Our response to the "SUBMIT" is to simply send the same page again*/

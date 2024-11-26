@@ -180,7 +180,12 @@ int main() {
                 //printf("button: %d: %d\n", i, buttonValue);
                 //serial.sendMessage(static_cast<serialSLIP::messageTypes>(serialSLIP::messageTypes::TRAINMODE+idx), buttonValue);
                 // TODO AM Button indexes should be reversed properly
-                static const std::vector<size_t> button_idx_translate{2, 1, 0, 3};
+                static const std::vector<size_t> button_idx_translate{
+                    toggle_savedata,
+                    button_randomise,
+                    toggle_training,
+                    button_cleardata
+                };
                 serial->sendMessage(UART_Common::button, button_idx_translate[idx], buttonValue);
             }
             idx++;

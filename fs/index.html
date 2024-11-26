@@ -62,17 +62,20 @@
     <script>
 
       const idx_of = {
+        // Sliders
         "randomSpeed": 0,
         "nIterations": 1,
+        // Buttons
         "training": 0,
         "randomise": 1,
         "savedata": 2,
-        "reset": 3,
-        "discretise": 4,
-        "complex": 5,
-        "explmode": 6,
-        "dataset": 7,
-        "model": 8
+        "cleardata": 3,
+        "clearmodel": 4,
+        "discretise": 5,
+        "complex": 6,
+        "explmode": 7,
+        "dataset": 8,
+        "model": 9
       };
 
       let grid = new MagicGrid({container: "#container", // Required. Can be a class, id, or an HTMLElement.
@@ -106,9 +109,14 @@
         'numberOfButtons': 4,
         'active': 0
       })
+      datasetRadios.lastSelected = 0;
       datasetRadios.on('change', function(v) {
-        console.log(v);
-        fetch("/buttons.cgi?b=" + idx_of["dataset"] + "&v=" + v);
+        if (v >= 0) {
+          fetch("/buttons.cgi?b=" + idx_of["dataset"] + "&v=" + v);
+          datasetRadios.lastSelected = v;
+        } else {
+          datasetRadios.select(datasetRadios.lastSelected);
+        }
       });
 
       var modelRadios = new Nexus.RadioButton('#modelSelector',{
@@ -116,10 +124,19 @@
         'numberOfButtons': 4,
         'active': 0
       })
+      modelRadios.lastSelected = 0;
       modelRadios.on('change', function(v) {
-        console.log(v);
-        fetch("/buttons.cgi?b=" + idx_of["model"] + "&v=" + v);
+        if (v >= 0) {
+          fetch("/buttons.cgi?b=" + idx_of["model"] + "&v=" + v);
+          modelRadios.lastSelected = v;
+        } else {
+          modelRadios.select(modelRadios.lastSelected);
+        }
       });
+
+    /**
+     * Dataset/model buttons
+     */
 
       var btnResetModel = new Nexus.TextButton('#resetModelButton',{
         'size': [120,40],
@@ -127,18 +144,40 @@
         'state': false,
         'text': "Reset"
       })
+      btnResetModel.on('change', function (v) {
+        fetch("/buttons.cgi?b=" + idx_of["clearmodel"] + "&v=" + (+v));
+      });
       var btnClearData = new Nexus.TextButton('#clearDataButton',{
         'size': [120,40],
         'mode': 'button',
         'state': false,
         'text': "Clear"
       })
+      btnClearData.on('release', function (v) {
+        fetch("/buttons.cgi?b=" + idx_of["cleardata"] + "&v=" + (+v));
+      });
       var btnTrain = new Nexus.TextButton('#trainButton',{
         'size': [120,40],
         'mode': 'button',
         'state': false,
-        'text': "Train"
+        'text': "Acquire"
       })
+      btnTrain.togglestate = false;
+      btnTrain.on('release', function () {
+        btnTrain.togglestate = !btnTrain.togglestate;
+        fetch("/buttons.cgi?b=" + idx_of["training"] + "&v=" + (+btnTrain.togglestate));
+        if (btnTrain.togglestate) {
+          // Toggle from acquire to train (inference to training)
+          btnTrain.text = "Train";
+        } else {
+          // Toggle from train to acquire (training to inference)
+          btnTrain.text = "Acquire";
+        }
+      });
+
+      /**
+       * Iterations
+       */
 
       var numboxIterations = new Nexus.Number('#numIterations',{
         'size': [60,30],
@@ -169,6 +208,10 @@
         sliderIterations_uichange = true;
       })
 
+      /**
+       * Exploration mode and Range
+       */
+
       var sliderRange = new Nexus.Slider('#rangeSlider',{
           'size': [150,30],
           'mode': 'absolute',  // 'relative' or 'absolute'
@@ -197,13 +240,22 @@
         fetch("/buttons.cgi?b=" + idx_of["explmode"] + "&v=" + v.index);
       })
 
+      /**
+       * Polling
+       */
+
       async function getJSON() {
-        const response = await fetch("/ssi.shtml");
+        var data = false;
+        var response = false;
+        response = await fetch("/ssi.shtml");
         if (!response.ok) {
-            console.log("poll error")
-          }
+          console.log("poll error");
+        }
+        try {
           // Parse the response as JSON
-          const data = await response.json();
+          data = await response.json();
+        } catch (error) {}
+        if (data) {
           //console.log(data);
           // Last error
           document.getElementById('loss').innerText = data.last_error;
@@ -213,7 +265,19 @@
           // N iterations
           sliderIterations_uichange = false;
           sliderIterations.value = data.n_iterations;
-      }
+          // Training state
+          btnTrain.togglestate = data.current_nn_mode;
+          if (btnTrain.togglestate) {
+            btnTrain.text = "Acquire";
+          } else {
+            btnTrain.text = "Train";
+          }
+        } else {
+          // Error polling data
+          document.getElementById('loss').innerText = "N/A";
+        }
+      }  // getJSON
+
       setInterval(getJSON, 100);
 
     </script>
