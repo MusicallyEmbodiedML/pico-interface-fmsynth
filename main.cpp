@@ -19,6 +19,7 @@ extern "C" {
 #include "MEMLSerial_Pico.hpp"
 #include "MaxiTrigger.hpp"
 #include "UART_Common.hpp"
+#include "MIDI_In.hpp"
 
 #include "lwip/apps/httpd.h"
 #include "pico/stdlib.h"
@@ -95,6 +96,11 @@ MedianFilter<int> clockFilter;
 static int pulseCount=0;
 static uint64_t lastPulse=0;
 
+enum kGPIO_LEDs {
+    GPIO_midi_LED = 21,
+    GPIO_training_LED = 2,
+};
+
 
 void gpio_callback(uint gpio, uint32_t events) {
     absolute_time_t t0;
@@ -117,9 +123,18 @@ int main() {
     stdio_init_all();
     printf("MEML FM Synth Interface\n");
 
-    gpio_set_irq_enabled_with_callback(2, GPIO_IRQ_EDGE_RISE , true, &gpio_callback);
+    // TODO resolve conflict with training status LED
+    // gpio_set_irq_enabled_with_callback(2, GPIO_IRQ_EDGE_RISE , true, &gpio_callback);
+
+    midi_init();
 
     multicore_launch_core1(core1_entry);
+
+    // GPIO LEDs
+    gpio_init(GPIO_training_LED);
+    gpio_init(GPIO_midi_LED);
+    gpio_set_dir(GPIO_training_LED, true);
+    gpio_set_dir(GPIO_midi_LED, true);
 
     //serial cx
     const unsigned int kGPIO_UART_TX = 0;
@@ -187,6 +202,10 @@ int main() {
                     button_cleardata
                 };
                 serial->sendMessage(UART_Common::button, button_idx_translate[idx], buttonValue);
+                if (button_idx_translate[idx] == toggle_training) {
+                    GAppState.current_nn_mode = static_cast<te_nn_mode>(!buttonValue);
+                    gpio_put(GPIO_training_LED, !static_cast<bool>(buttonValue));
+                }
             }
             idx++;
         }

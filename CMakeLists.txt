@@ -51,6 +51,7 @@ add_executable(pico_interface_fmsynth
         cgi.cpp
         ssi.cpp
         MEMLSerial_Pico.cpp
+        MIDI_In.cpp
         )
 
 

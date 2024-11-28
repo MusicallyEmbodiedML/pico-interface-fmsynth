@@ -4,6 +4,7 @@
 extern "C" {
 #include "hardware/uart.h"
 #include "hardware/irq.h"
+#include "pico/mutex.h"
 }
 #include <cstring>
 #include <string>
@@ -36,6 +37,7 @@ class MEMLSerial {
     uart_inst_t *uart_hw_;
     std::array<char, kDatagram_buffer_length> datagram_buffer_;
     std::string rx_buffer_;
+    mutex_t uart_mutex_;
     bool uart_is_init_;
 };
 

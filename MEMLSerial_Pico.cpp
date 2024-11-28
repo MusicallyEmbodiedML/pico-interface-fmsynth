@@ -1,7 +1,11 @@
 #include "MEMLSerial_Pico.hpp"
 #include "UART_Common.hpp"
 #include "common_defs.h"
+
+extern "C" {
 #include "pico/stdlib.h"
+#include "pico/mutex.h"
+}
 
 #include <iostream>
 
@@ -34,6 +38,8 @@ MEMLSerial::MEMLSerial(uart_inst_t *uart_hw) :
     irq_set_exclusive_handler(UART0_IRQ, uart0_irq_routine);
     irq_set_enabled(UART0_IRQ, true);
     uart_set_irq_enables(uart0, true, false);
+
+    mutex_init(&uart_mutex_);
 
     uart_is_init_ = true;
 }
@@ -107,6 +113,7 @@ void MEMLSerial::_ProcessMessage(const std::string &msg)
 
 
 void MEMLSerial::sendMessage(UART_Common::msgType type, uint8_t index, std::string &value) {
+    mutex_enter_blocking(&uart_mutex_);
     std::sprintf(datagram_buffer_.data(),
         "%c,%d,%s%c",
         type,
@@ -128,6 +135,7 @@ void MEMLSerial::sendMessage(UART_Common::msgType type, uint8_t index, std::stri
     } else {
         printf("No echo - UART not init\n");
     }
+    mutex_exit(&uart_mutex_);
 }
 
 

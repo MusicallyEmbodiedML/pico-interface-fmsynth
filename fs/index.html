@@ -54,7 +54,8 @@
         Range: <div id="rangeSlider"></div>
         Mode:
         <div id="exploModeSelect"></div>
-
+        App name: <i><span id="appName">Not initialised</span></i>
+        <div id="freqSlider"></div>
       </div>
     </div>
 
@@ -77,6 +78,14 @@
         "dataset": 8,
         "model": 9
       };
+
+      const app_names = [
+        "Unknown",          // 0
+        "FM Synth",         // 1
+        "Euclidean Seq",    // 2
+        "MultiFX",          // 3
+        "ML-MultiFX"        // 4
+      ];
 
       let grid = new MagicGrid({container: "#container", // Required. Can be a class, id, or an HTMLElement.
         static: true, // Required for static content.
@@ -241,6 +250,11 @@
       })
 
       /**
+       * App-specific controls
+       */
+      
+
+      /**
        * Polling
        */
 
@@ -272,9 +286,13 @@
           } else {
             btnTrain.text = "Train";
           }
+          // App data
+          document.getElementById("appName").innerText =
+            app_names[data.app_id];
         } else {
           // Error polling data
           document.getElementById('loss').innerText = "N/A";
+          document.getElementById("appName").innerText = "Not communicating";
         }
       }  // getJSON
 
