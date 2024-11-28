@@ -1,6 +1,7 @@
 #include "MEMLSerial_Pico.hpp"
 #include "UART_Common.hpp"
 #include "common_defs.h"
+#include "GPIO.hpp"
 
 extern "C" {
 #include "pico/stdlib.h"
@@ -76,6 +77,7 @@ void MEMLSerial::_ProcessMessage(const std::string &msg)
         case UART_Common::state_dump: {
             if (UART_Common::ExtractAppState(msg_payload, GAppState)) {
                 printf("UART- App state received.\n");
+                gpio_put(GPIO_training_LED, static_cast<bool>(GAppState.current_nn_mode));
             } else {
                 printf("UART- App state corrupted!.\n");
                 // TODO Query for another app state

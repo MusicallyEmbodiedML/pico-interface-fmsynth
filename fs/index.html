@@ -17,7 +17,7 @@
         border-radius: 8px;
       }
       .ctrlpanel { width: 150px; margin:10px; border-color: rgb(222, 219, 231); border-width: 1px; border-style:solid; padding: 10px;}
-      #loss {background-color: green; padding: 4px;}
+      #loss {background-color: rgb(107, 226, 107); padding: 4px;}
     </style>
 
   </head>
@@ -55,7 +55,10 @@
         Mode:
         <div id="exploModeSelect"></div>
         App name: <i><span id="appName">Not initialised</span></i>
-        <div id="freqSlider"></div>
+        <div id="customControls">
+          Pulse slider (Euclidean):
+          <div id="pulseSlider"></div>
+        </div>
       </div>
     </div>
 
@@ -119,13 +122,17 @@
         'active': 0
       })
       datasetRadios.lastSelected = 0;
+      datasetRadios.uiChange = true;
       datasetRadios.on('change', function(v) {
-        if (v >= 0) {
-          fetch("/buttons.cgi?b=" + idx_of["dataset"] + "&v=" + v);
-          datasetRadios.lastSelected = v;
-        } else {
-          datasetRadios.select(datasetRadios.lastSelected);
-        }
+        if (datasetRadios.uiChange) {
+          if (v >= 0) {
+            fetch("/buttons.cgi?b=" + idx_of["dataset"] + "&v=" + v);
+            datasetRadios.lastSelected = v;
+          } else {
+            datasetRadios.select(datasetRadios.lastSelected);
+          }
+        };
+        datasetRadios.uiChange = true;
       });
 
       var modelRadios = new Nexus.RadioButton('#modelSelector',{
@@ -134,13 +141,17 @@
         'active': 0
       })
       modelRadios.lastSelected = 0;
+      modelRadios.uiChange = true;
       modelRadios.on('change', function(v) {
-        if (v >= 0) {
-          fetch("/buttons.cgi?b=" + idx_of["model"] + "&v=" + v);
-          modelRadios.lastSelected = v;
-        } else {
-          modelRadios.select(modelRadios.lastSelected);
-        }
+        if (modelRadios.uiChange) {
+          if (v >= 0) {
+            fetch("/buttons.cgi?b=" + idx_of["model"] + "&v=" + v);
+            modelRadios.lastSelected = v;
+          } else {
+            modelRadios.select(modelRadios.lastSelected);
+          }
+        };
+        modelRadios.uiChange = true;
       });
 
     /**
@@ -244,15 +255,29 @@
         'size': [100,30],
         'options': ['nn weight','pretrain', 'zoom']
       })
+      var exploModeSelect_uichange = true;
       exploModeSelect.on('change',function(v) {
-        console.log(v);
-        fetch("/buttons.cgi?b=" + idx_of["explmode"] + "&v=" + v.index);
+        if (exploModeSelect_uichange) {
+          console.log(v);
+          fetch("/buttons.cgi?b=" + idx_of["explmode"] + "&v=" + v.index);
+        }
+        exploModeSelect_uichange = true;
       })
 
       /**
        * App-specific controls
        */
-      
+      var sliderPulse = new Nexus.Slider('#pulseSlider',{
+          'size': [150,30],
+          'mode': 'absolute',  // 'relative' or 'absolute'
+          'min': 0.1,
+          'max': 2,
+          'step': 0,
+          'value': 0.5
+      });
+      sliderPulse.on("change", function (v) {
+        console.log(v);
+      });
 
       /**
        * Polling
@@ -276,16 +301,24 @@
           // Expl range
           sliderRange_uichange = false;
           sliderRange.value = data.exploration_range;
+          // Expl dropdown
+          exploModeSelect_uichange = false;
+          exploModeSelect.selectedIndex = data.current_expl_mode;
           // N iterations
           sliderIterations_uichange = false;
           sliderIterations.value = data.n_iterations;
           // Training state
           btnTrain.togglestate = data.current_nn_mode;
           if (btnTrain.togglestate) {
-            btnTrain.text = "Acquire";
-          } else {
             btnTrain.text = "Train";
+          } else {
+            btnTrain.text = "Acquire";
           }
+          // Datasets and models
+          datasetRadios.uiChange = false;
+          datasetRadios.select(data.current_dataset);
+          modelRadios.uiChange = false;
+          modelRadios.select(data.current_model);
           // App data
           document.getElementById("appName").innerText =
             app_names[data.app_id];

@@ -6,6 +6,7 @@
 
 #include "MEMLSerial_Pico.hpp"
 #include "UART_Common.hpp"
+#include "GPIO.hpp"
 
 extern std::shared_ptr<MEMLSerial> serial;
 
@@ -18,8 +19,6 @@ extern std::shared_ptr<MEMLSerial> serial;
 
 #define NOTE_ON   0x90
 #define NOTE_OFF  0x80
-
-static constexpr size_t kGPIO_midi_LED__int = 21;
 
 // Forward declaration
 static void parse_midi_message(uint8_t byte);
@@ -105,12 +104,12 @@ void process_midi_message(uint8_t status, uint8_t pitch, uint8_t velocity)
     switch(status) {
         case NOTE_ON: {
             serial->sendMessage(UART_Common::midi_note, pitch, velocity);
-            gpio_put(kGPIO_midi_LED__int, true);
+            gpio_put(GPIO_midi_LED, true);
         } break;
 
         case NOTE_OFF: {
             serial->sendMessage(UART_Common::midi_note, pitch, 0);
-            gpio_put(kGPIO_midi_LED__int, false);
+            gpio_put(GPIO_midi_LED, false);
         } break;
 
         default: {}

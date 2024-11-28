@@ -20,6 +20,7 @@ extern "C" {
 #include "MaxiTrigger.hpp"
 #include "UART_Common.hpp"
 #include "MIDI_In.hpp"
+#include "GPIO.hpp"
 
 #include "lwip/apps/httpd.h"
 #include "pico/stdlib.h"
@@ -95,11 +96,6 @@ MedianFilter<int> clockFilter;
 
 static int pulseCount=0;
 static uint64_t lastPulse=0;
-
-enum kGPIO_LEDs {
-    GPIO_midi_LED = 21,
-    GPIO_training_LED = 2,
-};
 
 
 void gpio_callback(uint gpio, uint32_t events) {
