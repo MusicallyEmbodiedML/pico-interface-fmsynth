@@ -7,17 +7,32 @@
     <script src="./magic_grid.min.js"></script>
 
     <style>
+      /* #container {
+        width:100%;
+        margin 0 auto;
+      } */
       .container div {
         width: 100%;
-        height: 100%;
         background-color: antiquewhite;
         display: flex;
         justify-content: center;
         align-items: center;
         border-radius: 8px;
+        
       }
       .ctrlpanel { width: 150px; margin:10px; border-color: rgb(222, 219, 231); border-width: 1px; border-style:solid; padding: 10px;}
-      #loss {background-color: rgb(107, 226, 107); padding: 4px;}
+      #loss {background-color: green; padding: 4px;}
+      #resetModelButton, #clearDataButton, #trainButton {padding:20px;}
+      @media (min-width: 600px) {
+      #container {
+        width: 600px; /* Increase width for landscape mode */
+      }
+
+      .item {
+        font-size: 1.2rem; /* Scale text size */
+        padding: 25px;
+      }
+    }      
     </style>
 
   </head>
@@ -43,8 +58,9 @@
         </div>
       </div>
       <div id="trainCtrl" class="ctrlpanel">
-        Training
-        <div id="trainButton"></div>
+        <div id="trainSelectorText">Training--Inference</div>
+        <div id="trainSelector"></div>
+        <!-- <div id="trainButton"></div> -->
         Iterations <div id="numIterations"></div>
         <div id="iterationsSlider"></div>
         <div>Loss: <span id="loss">Loading...</span></div>
@@ -54,7 +70,7 @@
         Range: <div id="rangeSlider"></div>
         Mode:
         <div id="exploModeSelect"></div>
-        App name: <i><span id="appName">Not initialised</span></i>
+        App name: <i><span id="appName">[...waiting]</span></i>
         <div id="customControls">
           Pulse slider (Euclidean):
           <div id="pulseSlider"></div>
@@ -92,8 +108,15 @@
 
       let grid = new MagicGrid({container: "#container", // Required. Can be a class, id, or an HTMLElement.
         static: true, // Required for static content.
-        animate: true} // Optional.
+        animate: true,
+        gutter:10,
+        // maxColumns:4, 
+        useMin:true} // Optional.
         );
+    window.addEventListener('resize', () => {
+      grid.refreshItems();
+      grid.positionItems();
+    });        
 
       console.log(grid);
       grid.listen();
@@ -140,6 +163,7 @@
         'numberOfButtons': 4,
         'active': 0
       })
+
       modelRadios.lastSelected = 0;
       modelRadios.uiChange = true;
       modelRadios.on('change', function(v) {
@@ -176,24 +200,34 @@
       btnClearData.on('release', function (v) {
         fetch("/buttons.cgi?b=" + idx_of["cleardata"] + "&v=" + (+v));
       });
-      var btnTrain = new Nexus.TextButton('#trainButton',{
-        'size': [120,40],
-        'mode': 'button',
-        'state': false,
-        'text': "Acquire"
+
+      var trainRadios = new Nexus.RadioButton('#trainSelector',{
+        'size': [150,35],
+        'numberOfButtons': 2,
+        'active': 0
       })
-      btnTrain.togglestate = false;
-      btnTrain.on('release', function () {
-        btnTrain.togglestate = !btnTrain.togglestate;
-        fetch("/buttons.cgi?b=" + idx_of["training"] + "&v=" + (+btnTrain.togglestate));
-        if (btnTrain.togglestate) {
-          // Toggle from acquire to train (inference to training)
-          btnTrain.text = "Train";
-        } else {
-          // Toggle from train to acquire (training to inference)
-          btnTrain.text = "Acquire";
-        }
+      trainRadios.on('change', function(v) {
+        fetch("/buttons.cgi?b=" + idx_of["training"] + "&v=" + v);
       });
+
+      // var btnTrain = new Nexus.TextButton('#trainButton',{
+      //   'size': [120,40],
+      //   'mode': 'button',
+      //   'state': false,
+      //   'text': "Acquire"
+      // })
+      // btnTrain.togglestate = false;
+      // btnTrain.on('release', function () {
+      //   btnTrain.togglestate = !btnTrain.togglestate;
+      //   fetch("/buttons.cgi?b=" + idx_of["training"] + "&v=" + (+btnTrain.togglestate));
+      //   if (btnTrain.togglestate) {
+      //     // Toggle from acquire to train (inference to training)
+      //     btnTrain.text = "Train";
+      //   } else {
+      //     // Toggle from train to acquire (training to inference)
+      //     btnTrain.text = "Acquire";
+      //   }
+      // });
 
       /**
        * Iterations
@@ -309,6 +343,7 @@
           sliderIterations.value = data.n_iterations;
           // Training state
           btnTrain.togglestate = data.current_nn_mode;
+          trainRadios.select(toggleState);
           if (btnTrain.togglestate) {
             btnTrain.text = "Train";
           } else {
@@ -325,7 +360,7 @@
         } else {
           // Error polling data
           document.getElementById('loss').innerText = "N/A";
-          document.getElementById("appName").innerText = "Not communicating";
+          document.getElementById("appName").innerText = "[...waiting]";
         }
       }  // getJSON
 
